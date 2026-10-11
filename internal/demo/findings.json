@@ -1,0 +1,626 @@
+[
+  {
+    "meta": {
+      "name": "GHSA-xvch-5gv4-984h",
+      "description": "Prototype Pollution in minimist"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_CRITICAL",
+      "summary": "minimist anterior a 1.2.6 permite contaminar el prototipo de Object mediante argumentos con __proto__.",
+      "explanation": "Un atacante que controle los argumentos analizados puede modificar Object.prototype y alterar el comportamiento de toda la aplicación.",
+      "remediation": "Actualiza minimist a 1.2.6 o posterior.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_REACHABLE_FUNCTION",
+        "FINDING_TAGS_FIX_AVAILABLE"
+      ],
+      "ecosystem": "ECOSYSTEM_NPM",
+      "target_dependency_name": "minimist",
+      "target_dependency_version": "1.2.0",
+      "target_dependency_package_name": "npm://minimist@1.2.0",
+      "proposed_version": "1.2.6",
+      "dependency_file_paths": [
+        "package.json"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-xvch-5gv4-984h",
+              "CVE-2021-44906"
+            ],
+            "summary": "minimist anterior a 1.2.6 permite contaminar el prototipo de Object mediante argumentos con __proto__.",
+            "cvss_v3_severity": {
+              "score": 9.8,
+              "level": "CVSS_V3_SEVERITY_LEVEL_CRITICAL"
+            },
+            "epss_score": {
+              "probability_score": 0.46,
+              "percentile_score": 0.66
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "npm://minimist@1.2.0",
+            "from_version": "1.2.0",
+            "to_version": "1.2.6",
+            "upgrade_risk": "bajo"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GHSA-35jh-r3h4-6jhm",
+      "description": "Command Injection in lodash"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_HIGH",
+      "summary": "lodash.template permite inyección de comandos cuando la opción variable proviene de entrada no confiable.",
+      "explanation": "La función vulnerable `template` es invocada desde src/routes (ruta alcanzable en el call graph).",
+      "remediation": "Actualiza lodash a 4.17.21 o posterior.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_REACHABLE_FUNCTION",
+        "FINDING_TAGS_FIX_AVAILABLE"
+      ],
+      "ecosystem": "ECOSYSTEM_NPM",
+      "target_dependency_name": "lodash",
+      "target_dependency_version": "4.17.15",
+      "target_dependency_package_name": "npm://lodash@4.17.15",
+      "proposed_version": "4.17.21",
+      "dependency_file_paths": [
+        "package.json"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-35jh-r3h4-6jhm",
+              "CVE-2021-23337"
+            ],
+            "summary": "lodash.template permite inyección de comandos cuando la opción variable proviene de entrada no confiable.",
+            "cvss_v3_severity": {
+              "score": 7.2,
+              "level": "CVSS_V3_SEVERITY_LEVEL_HIGH"
+            },
+            "epss_score": {
+              "probability_score": 0.05,
+              "percentile_score": 0.25
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "npm://lodash@4.17.15",
+            "from_version": "4.17.15",
+            "to_version": "4.17.21",
+            "upgrade_risk": "bajo"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GHSA-hrpp-h998-j3pp",
+      "description": "qs vulnerable to Prototype Pollution"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_HIGH",
+      "summary": "qs antes de 6.10.3 permite contaminar el prototipo mediante parámetros __proto__ en la query string.",
+      "explanation": "Dependencia transitiva introducida por express; se corrige actualizando la dependencia directa.",
+      "remediation": "Actualiza express a 4.17.3 o posterior (arrastra qs 6.9.7).",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_TRANSITIVE",
+        "FINDING_TAGS_REACHABLE_DEPENDENCY",
+        "FINDING_TAGS_FIX_AVAILABLE"
+      ],
+      "ecosystem": "ECOSYSTEM_NPM",
+      "target_dependency_name": "qs",
+      "target_dependency_version": "6.7.0",
+      "target_dependency_package_name": "npm://qs@6.7.0",
+      "proposed_version": "6.7.3",
+      "dependency_file_paths": [
+        "package.json"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-hrpp-h998-j3pp",
+              "CVE-2022-24999"
+            ],
+            "summary": "qs antes de 6.10.3 permite contaminar el prototipo mediante parámetros __proto__ en la query string.",
+            "cvss_v3_severity": {
+              "score": 7.5,
+              "level": "CVSS_V3_SEVERITY_LEVEL_HIGH"
+            },
+            "epss_score": {
+              "probability_score": 0.03,
+              "percentile_score": 0.23
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "npm://express@4.17.1",
+            "from_version": "4.17.1",
+            "to_version": "4.17.3",
+            "upgrade_risk": "medio"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GHSA-w596-4wvx-j9j6",
+      "description": "PyYAML arbitrary code execution"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_CRITICAL",
+      "summary": "PyYAML anterior a 5.4 permite ejecución arbitraria de código al cargar YAML con full_load.",
+      "explanation": "El proyecto declara PyYAML directamente en requirements.txt.",
+      "remediation": "Actualiza PyYAML a 5.4 o posterior y usa safe_load.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_REACHABLE_DEPENDENCY",
+        "FINDING_TAGS_FIX_AVAILABLE",
+        "FINDING_TAGS_EXPLOITED"
+      ],
+      "ecosystem": "ECOSYSTEM_PYPI",
+      "target_dependency_name": "PyYAML",
+      "target_dependency_version": "5.1",
+      "target_dependency_package_name": "pypi://PyYAML@5.1",
+      "proposed_version": "5.4",
+      "dependency_file_paths": [
+        "requirements.txt"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-8q59-q68h-6hv4",
+              "CVE-2020-14343"
+            ],
+            "summary": "PyYAML anterior a 5.4 permite ejecución arbitraria de código al cargar YAML con full_load.",
+            "cvss_v3_severity": {
+              "score": 9.8,
+              "level": "CVSS_V3_SEVERITY_LEVEL_CRITICAL"
+            },
+            "epss_score": {
+              "probability_score": 0.62,
+              "percentile_score": 0.8200000000000001
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "pypi://PyYAML@5.1",
+            "from_version": "5.1",
+            "to_version": "5.4",
+            "upgrade_risk": "medio"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GHSA-x84v-xcm2-53pg",
+      "description": "Requests leaks Authorization header on redirect"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_MEDIUM",
+      "summary": "requests envía el encabezado Authorization al seguir redirecciones de HTTPS a HTTP.",
+      "explanation": "Credenciales podrían exponerse en texto claro.",
+      "remediation": "Actualiza requests a 2.20.0 o posterior.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_UNREACHABLE_FUNCTION",
+        "FINDING_TAGS_FIX_AVAILABLE"
+      ],
+      "ecosystem": "ECOSYSTEM_PYPI",
+      "target_dependency_name": "requests",
+      "target_dependency_version": "2.19.0",
+      "target_dependency_package_name": "pypi://requests@2.19.0",
+      "proposed_version": "2.20.0",
+      "dependency_file_paths": [
+        "requirements.txt"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-x84v-xcm2-53pg",
+              "CVE-2018-18074"
+            ],
+            "summary": "requests envía el encabezado Authorization al seguir redirecciones de HTTPS a HTTP.",
+            "cvss_v3_severity": {
+              "score": 7.5,
+              "level": "CVSS_V3_SEVERITY_LEVEL_MEDIUM"
+            },
+            "epss_score": {
+              "probability_score": 0.02,
+              "percentile_score": 0.22
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "pypi://requests@2.19.0",
+            "from_version": "2.19.0",
+            "to_version": "2.20.0",
+            "upgrade_risk": "bajo"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GO-2021-0113",
+      "description": "Out-of-bounds read in golang.org/x/text/language"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_MEDIUM",
+      "summary": "language.ParseAcceptLanguage puede entrar en pánico con entradas manipuladas (lectura fuera de rango).",
+      "explanation": "Dependencia directa declarada en go.mod.",
+      "remediation": "Actualiza golang.org/x/text a v0.3.7 o posterior.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_REACHABLE_DEPENDENCY",
+        "FINDING_TAGS_FIX_AVAILABLE"
+      ],
+      "ecosystem": "ECOSYSTEM_GO",
+      "target_dependency_name": "golang.org/x/text",
+      "target_dependency_version": "v0.3.6",
+      "target_dependency_package_name": "go://golang.org/x/text@v0.3.6",
+      "proposed_version": "v0.3.7",
+      "dependency_file_paths": [
+        "go.mod"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GO-2021-0113",
+              "CVE-2021-38561"
+            ],
+            "summary": "language.ParseAcceptLanguage puede entrar en pánico con entradas manipuladas (lectura fuera de rango).",
+            "cvss_v3_severity": {
+              "score": 7.5,
+              "level": "CVSS_V3_SEVERITY_LEVEL_MEDIUM"
+            },
+            "epss_score": {
+              "probability_score": 0.01,
+              "percentile_score": 0.21000000000000002
+            }
+          }
+        }
+      },
+      "fixing_upgrades": {
+        "upgrade_list": [
+          {
+            "direct_dependency_name": "go://golang.org/x/text@v0.3.6",
+            "from_version": "v0.3.6",
+            "to_version": "v0.3.7",
+            "upgrade_risk": "bajo"
+          }
+        ]
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "GHSA-9vvw-cc9w-f27h",
+      "description": "debug Inefficient Regular Expression Complexity"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_LOW",
+      "summary": "El parser de la variable DEBUG es vulnerable a ReDoS con cadenas largas.",
+      "explanation": "Dependencia transitiva sin actualización directa disponible según el análisis.",
+      "remediation": "Revisa qué dependencia directa arrastra debug@2.6.8 y actualízala.",
+      "finding_categories": [
+        "FINDING_CATEGORY_VULNERABILITY"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_TRANSITIVE",
+        "FINDING_TAGS_UNREACHABLE_FUNCTION"
+      ],
+      "ecosystem": "ECOSYSTEM_NPM",
+      "target_dependency_name": "debug",
+      "target_dependency_version": "2.6.8",
+      "target_dependency_package_name": "npm://debug@2.6.8",
+      "proposed_version": "",
+      "dependency_file_paths": [
+        "package.json"
+      ],
+      "finding_metadata": {
+        "vulnerability": {
+          "spec": {
+            "aliases": [
+              "GHSA-9vvw-cc9w-f27h",
+              "CVE-2017-16137"
+            ],
+            "summary": "El parser de la variable DEBUG es vulnerable a ReDoS con cadenas largas.",
+            "cvss_v3_severity": {
+              "score": 5.3,
+              "level": "CVSS_V3_SEVERITY_LEVEL_LOW"
+            },
+            "epss_score": {
+              "probability_score": 0.01,
+              "percentile_score": 0.21000000000000002
+            }
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "malware-reqeusts",
+      "description": "Paquete malicioso: reqeusts (typosquatting de requests)"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_CRITICAL",
+      "summary": "El paquete reqeusts imita a requests y exfiltra variables de entorno durante la instalación.",
+      "explanation": "Detectado por las reglas de malware de Endor Labs.",
+      "remediation": "Elimina el paquete y rota cualquier credencial expuesta; instala `requests`.",
+      "finding_categories": [
+        "FINDING_CATEGORY_MALWARE",
+        "FINDING_CATEGORY_SUPPLY_CHAIN"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_DIRECT",
+        "FINDING_TAGS_MALWARE"
+      ],
+      "ecosystem": "ECOSYSTEM_PYPI",
+      "target_dependency_name": "reqeusts",
+      "target_dependency_version": "1.0.0",
+      "target_dependency_package_name": "pypi://reqeusts@1.0.0",
+      "dependency_file_paths": [
+        "requirements.txt"
+      ]
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "aws-access-key",
+      "description": "AWS Access Key ID expuesta en el código"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_CRITICAL",
+      "summary": "Se encontró una clave de acceso de AWS escrita directamente en el código fuente.",
+      "remediation": "Revoca la clave en IAM, rótala y lee el valor desde variables de entorno o un gestor de secretos.",
+      "explanation": "Detectado por las reglas de secretos; la credencial se valida contra el proveedor cuando es posible.",
+      "finding_categories": [
+        "FINDING_CATEGORY_SECRETS"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_SELF",
+        "FINDING_TAGS_VALID_SECRET"
+      ],
+      "finding_metadata": {
+        "custom": {
+          "file": "config/settings.py",
+          "line": 6,
+          "snippet": "AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\""
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "generic-password",
+      "description": "Contraseña de base de datos en texto plano"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_HIGH",
+      "summary": "Credencial de base de datos incrustada en el código.",
+      "remediation": "Mueve la contraseña a una variable de entorno y rota la actual.",
+      "explanation": "Detectado por las reglas de secretos; la credencial se valida contra el proveedor cuando es posible.",
+      "finding_categories": [
+        "FINDING_CATEGORY_SECRETS"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_SELF"
+      ],
+      "finding_metadata": {
+        "custom": {
+          "file": "src/db.js",
+          "line": 6,
+          "snippet": "  password: 'hunter2-demo',"
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "sql-injection",
+      "description": "Inyección SQL por concatenación de entrada del usuario"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_HIGH",
+      "summary": "El parámetro `name` de la query string se concatena en la consulta SQL sin parametrizar (CWE-89).",
+      "remediation": "Usa consultas parametrizadas: db.query('SELECT * FROM users WHERE name = $1', [name]).",
+      "explanation": "Flujo de datos: req.query.name → concatenación → db.query().",
+      "finding_categories": [
+        "FINDING_CATEGORY_SAST"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_SELF",
+        "FINDING_TAGS_AI"
+      ],
+      "finding_metadata": {
+        "ai_sast_data": {
+          "summary": "El parámetro `name` de la query string se concatena en la consulta SQL sin parametrizar (CWE-89).",
+          "cwes": [
+            "CWE-89"
+          ],
+          "language": "javascript",
+          "location": {
+            "relative_path": "src/routes/users.js",
+            "start_line": 9,
+            "end_line": 9,
+            "snippet": "  const rows = await db.query(\"SELECT * FROM users WHERE name = '\" + name + \"'\");"
+          },
+          "remediation": "Usa consultas parametrizadas: db.query('SELECT * FROM users WHERE name = $1', [name])."
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "weak-hash-md5",
+      "description": "Uso de MD5 para almacenar contraseñas"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_MEDIUM",
+      "summary": "MD5 no es adecuado para hashing de contraseñas (CWE-328).",
+      "remediation": "Usa bcrypt, scrypt o Argon2 con sal por usuario.",
+      "explanation": "MD5 es rápido y sin sal: permite ataques de diccionario masivos.",
+      "finding_categories": [
+        "FINDING_CATEGORY_SAST"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_SELF",
+        "FINDING_TAGS_AI"
+      ],
+      "finding_metadata": {
+        "ai_sast_data": {
+          "summary": "MD5 no es adecuado para hashing de contraseñas (CWE-328).",
+          "cwes": [
+            "CWE-328"
+          ],
+          "language": "javascript",
+          "location": {
+            "relative_path": "src/auth.js",
+            "start_line": 5,
+            "end_line": 5,
+            "snippet": "  return crypto.createHash('md5').update(password).digest('hex');"
+          },
+          "remediation": "Usa bcrypt, scrypt o Argon2 con sal por usuario."
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  },
+  {
+    "meta": {
+      "name": "debug-enabled",
+      "description": "Modo DEBUG activado en configuración"
+    },
+    "spec": {
+      "level": "FINDING_LEVEL_LOW",
+      "summary": "DEBUG = True expone trazas y variables en producción (CWE-489).",
+      "remediation": "Controla DEBUG con una variable de entorno y desactívalo en producción.",
+      "explanation": "Configuración de depuración habilitada.",
+      "finding_categories": [
+        "FINDING_CATEGORY_SAST"
+      ],
+      "finding_tags": [
+        "FINDING_TAGS_SELF",
+        "FINDING_TAGS_AI"
+      ],
+      "finding_metadata": {
+        "ai_sast_data": {
+          "summary": "DEBUG = True expone trazas y variables en producción (CWE-489).",
+          "cwes": [
+            "CWE-489"
+          ],
+          "language": "python",
+          "location": {
+            "relative_path": "config/settings.py",
+            "start_line": 3,
+            "end_line": 3,
+            "snippet": "DEBUG = True"
+          },
+          "remediation": "Controla DEBUG con una variable de entorno y desactívalo en producción."
+        }
+      }
+    },
+    "context": {
+      "type": "CONTEXT_TYPE_MAIN",
+      "id": "default"
+    }
+  }
+]

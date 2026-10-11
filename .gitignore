@@ -1,0 +1,5 @@
+/bin/
+/auri-tui
+/auri-tui.exe
+*.exe
+.DS_Store
