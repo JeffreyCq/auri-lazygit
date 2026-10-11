@@ -47,9 +47,10 @@ if (-not (Have 'git')) {
 Info "Fetching source into $SrcDir"
 if (Test-Path $SrcDir) { Remove-Item -Recurse -Force $SrcDir }
 New-Item -ItemType Directory -Force -Path (Split-Path $SrcDir) | Out-Null
-try {
-    git clone --depth 1 $RepoUrl $SrcDir *> $null
-} catch {
+git clone --depth 1 $RepoUrl $SrcDir *> $null
+if ($LASTEXITCODE -ne 0) {
+    # A failed native command (unlike a cmdlet) doesn't throw, so this has
+    # to be checked explicitly instead of relying on try/catch.
     Err "Failed to clone $RepoUrl"
     exit 1
 }
@@ -74,8 +75,10 @@ if (-not (Have 'npx')) {
 }
 
 $userPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
+if (-not $userPath) { $userPath = '' }
 if (-not ($userPath -split ';' | Where-Object { $_ -eq $BinDir })) {
-    [Environment]::SetEnvironmentVariable('PATH', "$userPath;$BinDir", 'User')
+    $newPath = if ($userPath) { "$userPath;$BinDir" } else { $BinDir }
+    [Environment]::SetEnvironmentVariable('PATH', $newPath, 'User')
     Warn "Added $BinDir to your User PATH — open a new terminal for it to take effect."
 } else {
     Info "$BinDir is already on your PATH."
