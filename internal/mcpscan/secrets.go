@@ -12,22 +12,24 @@ import (
 	"auri-lazygit/internal/mcp"
 )
 
-// ErrNoGitRemote is returned when the MCP `scan` tool rejects the target
-// because its repository has no configured git origin remote. This is a
-// real precondition of Endor's secrets/SAST scanner (unrelated to license
-// tier) that the dependency engine in scan.go does not share.
+// ErrNoGitRemote se devuelve cuando la herramienta MCP `scan` rechaza el
+// objetivo porque su repositorio no tiene un remoto git origin configurado.
+// Es una precondición real del escáner de secretos/SAST de Endor (no
+// relacionada con el nivel de licencia) que el motor de dependencias en
+// scan.go no comparte.
 var ErrNoGitRemote = errors.New("the Endor Labs secrets scanner requires the repository to have a git remote configured (e.g. `git remote add origin <url>`); the dependency scan doesn't need one")
 
-// RunSecrets calls the MCP server's `scan` tool with scan_types: ["secrets"]
-// against dir and normalizes the result into the same Result shape used by
-// Run/RunFiles (Result.Kind is set to "secrets"), so the UI can render it
-// with the existing results and fix-review screens unchanged.
+// RunSecrets llama a la herramienta `scan` del servidor MCP con
+// scan_types: ["secrets"] contra dir y normaliza el resultado a la misma
+// forma Result que usan Run/RunFiles (Result.Kind queda en "secrets"), para
+// que la UI lo renderice con las mismas pantallas de resultados y revisión
+// de arreglos sin cambios.
 //
-// Unlike Run/RunFiles, this is a single, coarse-grained MCP call: there's no
-// per-dependency progress to report, it can legitimately take minutes on a
-// non-trivial repo, and client must be initialized with a context that has
-// no artificial deadline (the caller is expected to let the user cancel via
-// its own ctx instead).
+// A diferencia de Run/RunFiles, esta es una sola llamada MCP de grano
+// grueso: no hay progreso por dependencia que reportar, puede tardar
+// legítimamente varios minutos en un repo no trivial, y client debe
+// inicializarse con un contexto sin plazo artificial (se espera que quien
+// llama deje cancelar al usuario a través de su propio ctx).
 func RunSecrets(ctx context.Context, client *mcp.Client, dir string, progress func(Progress)) (*Result, error) {
 	if progress != nil {
 		progress(Progress{Phase: "secrets"})
@@ -67,23 +69,25 @@ func RunSecrets(ctx context.Context, client *mcp.Client, dir string, progress fu
 	return &Result{Kind: "secrets", Findings: fs}, nil
 }
 
-// scanToolResult is the top-level shape of the `scan` tool's response.
-// Results is free-form prose followed by an embedded JSON object when there
-// are findings ("The following findings were identified. ...\n{...}"), or
-// just prose ("...\nNo problems found") when there are none.
+// scanToolResult es la forma de más alto nivel de la respuesta de la
+// herramienta `scan`. Results es prosa libre seguida de un objeto JSON
+// embebido cuando hay hallazgos ("The following findings were
+// identified. ...\n{...}"), o solo prosa ("...\nNo problems found") cuando
+// no los hay.
 type scanToolResult struct {
 	Results string `json:"results"`
 	Error   string `json:"error"`
 }
 
-// scanFindingsDoc is the embedded JSON object inside scanToolResult.Results.
+// scanFindingsDoc es el objeto JSON embebido dentro de scanToolResult.Results.
 type scanFindingsDoc struct {
 	Objects []scanFindingObject `json:"objects"`
 }
 
-// scanFindingObject mirrors the Endor Finding resource shape returned by the
-// `scan` tool (camelCase JSON, distinct from the snake_case shape emitted by
-// `endorctl scan -o json` that internal/findings/parse.go handles).
+// scanFindingObject refleja la forma del recurso Finding de Endor que
+// devuelve la herramienta `scan` (JSON en camelCase, distinto de la forma en
+// snake_case que emite `endorctl scan -o json`, que maneja
+// internal/findings/parse.go).
 type scanFindingObject struct {
 	UUID string `json:"uuid"`
 	Meta struct {
@@ -112,9 +116,9 @@ type scanFindingObject struct {
 	} `json:"spec"`
 }
 
-// parseSecretsResults extracts the embedded findings document from the
-// `scan` tool's prose+JSON response, or returns (nil, nil) when the prose
-// indicates a clean scan (e.g. "No problems found").
+// parseSecretsResults extrae el documento de hallazgos embebido de la
+// respuesta prosa+JSON de la herramienta `scan`, o devuelve (nil, nil)
+// cuando la prosa indica un escaneo limpio (p. ej. "No problems found").
 func parseSecretsResults(results string) ([]findings.Finding, error) {
 	marker := `{"objects"`
 	idx := strings.Index(results, marker)
@@ -181,10 +185,10 @@ func secretToFinding(o scanFindingObject) findings.Finding {
 	}
 }
 
-// validationNote turns Endor's live-validation status into a short,
-// human-readable note appended to the finding's explanation. Endor's
-// secrets scanner doesn't just pattern-match — it actively checks whether a
-// found secret is still a live credential.
+// validationNote convierte el estado de validación en vivo de Endor en una
+// nota corta y legible que se agrega a la explicación del hallazgo. El
+// escáner de secretos de Endor no solo hace coincidir patrones: verifica
+// activamente si un secreto encontrado sigue siendo una credencial viva.
 func validationNote(status string) string {
 	switch {
 	case strings.Contains(status, "IS_INVALID"):
@@ -196,7 +200,7 @@ func validationNote(status string) string {
 	}
 }
 
-// splitSecretLocation parses Endor's "path/to/file.ext#L5" location format.
+// splitSecretLocation parsea el formato de ubicación de Endor "path/to/file.ext#L5".
 func splitSecretLocation(loc string) (file string, line int) {
 	if i := strings.LastIndex(loc, "#L"); i >= 0 {
 		if n, err := strconv.Atoi(loc[i+2:]); err == nil {

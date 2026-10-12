@@ -1,4 +1,4 @@
-// Package ui implements the terminal interface (Bubble Tea) for AURI × Lazygit.
+// Package ui implementa la interfaz de terminal (Bubble Tea) de AURI × Lazygit.
 package ui
 
 import (
@@ -29,7 +29,7 @@ const (
 	scRawToolResult
 )
 
-// targetKind identifies what the user chose to scan.
+// targetKind identifica qué eligió escanear el usuario.
 type targetKind int
 
 const (
@@ -47,7 +47,7 @@ type menuItem struct {
 	kind  targetKind
 }
 
-// ---- messages ----
+// ---- mensajes ----
 
 type mcpDoneMsg struct {
 	client *mcp.Client
@@ -60,51 +60,51 @@ type toolResultMsg struct {
 	err    error
 }
 
-// scanProgressMsg carries one progress update from the background scan.
+// scanProgressMsg transporta una actualización de progreso del escaneo en segundo plano.
 type scanProgressMsg struct{ p mcpscan.Progress }
 
-// scanDoneMsg carries the final scan result.
+// scanDoneMsg transporta el resultado final del escaneo.
 type scanDoneMsg struct {
 	result *mcpscan.Result
 	err    error
 }
 
-// tickMsg drives the scanning-screen spinner animation.
+// tickMsg impulsa la animación del spinner en la pantalla de escaneo.
 type tickMsg struct{}
 
-// fixBuiltMsg carries the outcome of building a fix.Plan for the current finding.
+// fixBuiltMsg transporta el resultado de construir un fix.Plan para el hallazgo actual.
 type fixBuiltMsg struct {
 	plan *fix.Plan
 	err  error
 }
 
-// fixAppliedMsg carries the outcome of applying the current fix.Plan.
+// fixAppliedMsg transporta el resultado de aplicar el fix.Plan actual.
 type fixAppliedMsg struct{ err error }
 
-// Model is the Bubble Tea model.
+// Model es el modelo de Bubble Tea.
 type Model struct {
 	w, h int
 
 	screen screen
 
-	// repo detection
+	// detección del repo
 	cwd      string
 	repoRoot string
 	gitOK    bool
 
-	// target menu
+	// menú de objetivo
 	items  []menuItem
 	cursor int
 	status string
 
-	// MCP connection (shared by every target)
+	// conexión MCP (compartida por todos los objetivos)
 	mcpClient     *mcp.Client
 	mcpTools      []mcp.Tool
 	mcpErr        error
 	mcpConnecting bool
-	pendingTarget targetKind // what to do once the connection is ready
+	pendingTarget targetKind // qué hacer cuando la conexión esté lista
 
-	// MCP tool browser (advanced fallback, targetMCPBrowse)
+	// navegador de herramientas MCP (alternativa avanzada, targetMCPBrowse)
 	mcpToolSel    int
 	toolInput     map[string]interface{}
 	toolInputList []string
@@ -114,14 +114,14 @@ type Model struct {
 	resultOutput  string
 	resultErr     error
 
-	// commit picker (targetCommit)
+	// selector de commit (targetCommit)
 	commits      []gitx.Commit
 	commitCursor int
 	commitInput  string
 	commitTyping bool
 	commitErr    error
 
-	// scan execution
+	// ejecución del escaneo
 	scanLabel      string // human-readable description of what's being scanned
 	scanKind       string // "deps" (SCA/malware) or "secrets" — picks the mcpscan engine
 	scanDir        string
@@ -135,10 +135,10 @@ type Model struct {
 	scanErr        error
 	spinnerFrame   int
 
-	// scan results navigation
+	// navegación de resultados del escaneo
 	resultCursor int
 
-	// fix review
+	// revisión de arreglos
 	fixQueue    []findings.Finding
 	fixIndex    int
 	fixPlan     *fix.Plan
@@ -149,7 +149,7 @@ type Model struct {
 	fixMsg      string
 }
 
-// New creates the initial model, detecting the git repository root from cwd.
+// New crea el modelo inicial, detectando la raíz del repositorio git desde cwd.
 func New() Model {
 	m := Model{w: 100, h: 30}
 	m.cwd, _ = os.Getwd()
@@ -167,7 +167,7 @@ func New() Model {
 	return m
 }
 
-// Init implements tea.Model.
+// Init implementa tea.Model.
 func (m Model) Init() tea.Cmd { return nil }
 
 func (m *Model) buildMenu() {
@@ -190,7 +190,7 @@ func (m *Model) buildMenu() {
 	m.cursor = 0
 }
 
-// connectMCP starts (or reuses) the MCP connection, then proceeds to target.
+// connectMCP inicia (o reutiliza) la conexión MCP, y luego continúa hacia target.
 func (m *Model) connectMCP(target targetKind) tea.Cmd {
 	m.pendingTarget = target
 	if m.mcpClient != nil {
@@ -203,13 +203,20 @@ func (m *Model) connectMCP(target targetKind) tea.Cmd {
 		if err != nil {
 			return mcpDoneMsg{err: err}
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-		if err := client.Initialize(ctx); err != nil {
+		// Al arrancar, endorctl hace una llamada bloqueante de sincronización de
+		// políticas antes de poder atender MCP; en una sesión nueva/anónima esa
+		// llamada puede fallar y reintentar, empujando el tiempo hasta la
+		// primera respuesta más allá de 20s. Por eso cada fase tiene su propio
+		// presupuesto en vez de compartir un único plazo ajustado.
+		initCtx, initCancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer initCancel()
+		if err := client.Initialize(initCtx); err != nil {
 			client.Close()
 			return mcpDoneMsg{err: err}
 		}
-		tools, err := client.ListTools(ctx)
+		listCtx, listCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer listCancel()
+		tools, err := client.ListTools(listCtx)
 		if err != nil {
 			client.Close()
 			return mcpDoneMsg{err: err}
@@ -218,7 +225,7 @@ func (m *Model) connectMCP(target targetKind) tea.Cmd {
 	}
 }
 
-// closeMCP closes the connection to the MCP server and any pending worktree.
+// closeMCP cierra la conexión al servidor MCP y cualquier worktree pendiente.
 func (m *Model) closeMCP() {
 	if m.mcpClient != nil {
 		m.mcpClient.Close()

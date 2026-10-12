@@ -8,11 +8,12 @@ import (
 	"auri-lazygit/internal/report"
 )
 
-// auriFont is a tiny embedded 5×5 block font, just large enough to spell
-// "AURI" for the menu screen's title banner. Each glyph is 5 columns wide;
-// buildBanner joins glyphs with a single column of space between them, so
-// the whole word stays compact enough to fit even an 80×24 terminal with
-// room to spare.
+// auriFont es una pequeña fuente de bloques 5×5 embebida, justo lo
+// suficiente para escribir "AURI" en el banner de la pantalla de menú. Cada
+// glifo mide 5 columnas de ancho; buildBanner une los glifos con una sola
+// columna de espacio entre ellos, de modo que la palabra entera quede lo
+// bastante compacta como para caber incluso en una terminal de 80×24 con
+// espacio de sobra.
 var auriFont = map[byte][5]string{
 	'A': {
 		"  █  ",
@@ -44,8 +45,8 @@ var auriFont = map[byte][5]string{
 	},
 }
 
-// buildBanner spells word (letters must exist in auriFont) as 5 text rows
-// of block characters.
+// buildBanner escribe word (sus letras deben existir en auriFont) como 5
+// filas de texto hechas de caracteres de bloque.
 func buildBanner(word string) []string {
 	rows := make([]string, 5)
 	for i := range rows {
@@ -63,13 +64,13 @@ func buildBanner(word string) []string {
 	return rows
 }
 
-// bannerColors fades from Endor Labs' brightest green (top) to its darkest
-// (bottom), giving the banner a subtle lit-from-above glow instead of a
-// flat block of color.
+// bannerColors se degrada desde el verde más brillante de Endor Labs
+// (arriba) hasta el más oscuro (abajo), dándole al banner un sutil brillo
+// "iluminado desde arriba" en vez de un bloque de color plano.
 var bannerColors = []lipgloss.Color{report.ColAccent, report.ColOK, report.ColLow, report.ColLow, report.ColBrand}
 
-// renderBanner renders the "AURI" title banner, indented to match the
-// rest of the UI's two-space left margin.
+// renderBanner dibuja el banner del título "AURI", con la misma sangría de
+// dos espacios que usa el resto de la UI como margen izquierdo.
 func renderBanner() string {
 	rows := buildBanner("AURI")
 	var b strings.Builder

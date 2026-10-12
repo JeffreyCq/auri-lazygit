@@ -8,6 +8,11 @@ diff and confirmation.
 It talks to AURI exclusively over MCP (`endorctl ai-tools mcp-server`), which works on the
 free Endor Labs Developer Edition tier — no `endorctl scan`/Enterprise CLI license required.
 
+**Contents:** [Install](#install) · [How it works](#how-it-works) ·
+[Authenticating](#authenticating-with-endor-labs) · [Keys](#keys) · [Fix review](#fix-review) ·
+[Security](#security) · [Known limits](#known-limits) · [Structure](#structure) ·
+[Development](#development)
+
 ```
  auri-tui  AURI × Lazygit — Endor Labs MCP
 ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -55,8 +60,10 @@ installer leaves it alone and prints the one entry to add by hand instead of ris
 YAML merge.
 
 **Requirements:** [Go](https://go.dev/dl/) 1.24+, [git](https://git-scm.com/), and
-[Node.js](https://nodejs.org/) (for `npx`, which launches the Endor Labs MCP server) —
-the installer checks for all three and tells you what's missing.
+[Node.js](https://nodejs.org/) 18+ (for `npx`, which launches the Endor Labs MCP server).
+The installer checks every requirement up front — printing a pass/fail checklist for all of
+them before doing any cloning or building — rather than failing partway through on the first
+one it hits.
 
 ### From source (manual)
 
@@ -128,6 +135,29 @@ separate server process is needed — just a valid `endorctl` session.
 - Nothing is ever applied without you pressing `a` on that specific finding — there's no
   bulk-apply, no `--yes` flag, and no way to trigger it from the Lazygit config.
 
+## Security
+
+This is a security-scanning tool, so it holds itself to a few explicit rules:
+
+- **Manual only.** Nothing in `auri-tui` runs on a git hook, a timer, or any other trigger —
+  only when you launch it and press a key. It never calls `git commit`, `git push`, or any
+  other side-effecting git command on your behalf.
+- **No shell injection surface.** Every subprocess call (`git`, `npx`/`endorctl`) is built as
+  an argument vector (`exec.Command("git", arg1, arg2, ...)`), never as a shell string — the
+  arguments can't be reinterpreted by a shell no matter what they contain. References that
+  come from outside your explicit input (like a resolved commit hash) are additionally
+  rejected if they start with `-`, so they can never be mistaken for a flag.
+- **Your Endor Labs session never passes through this code.** `auri-tui` talks to `endorctl`
+  over MCP; it has no HTTP client, holds no API keys, and never sees your credentials —
+  `endorctl` owns authentication entirely.
+- **Atomic, confirmed writes.** A fix is never applied without you pressing `a` on that exact
+  finding. The manifest write happens via a temp file + atomic rename, and aborts if the file
+  changed on disk since the diff was shown — no partial writes, no stale edits.
+- **A historical commit is scanned in an isolated `git worktree`**, never your real working
+  tree, so picking an old commit can't disturb uncommitted changes.
+
+Found something that doesn't hold up? Please open an issue.
+
 ## Known limits
 
 - The 0–100 risk index is a local heuristic (critical×10 + high×5 + medium×2 + low, capped
@@ -141,8 +171,11 @@ separate server process is needed — just a valid `endorctl` session.
   scanner server-side, so it can take a minute or two, especially on the first run.
 - The secrets scan requires the repository to have a git `origin` remote configured
   (`git remote add origin <url>`) — the dependency scans don't need one.
-- Windows support is new: it cross-compiles and runs, but has had less real-world mileage than
-  macOS/Linux. If something's off, please open an issue.
+- Windows support: fully exercised and working, including the Lazygit `Ctrl+A` keybinding and
+  the installer. The one environment-specific gap is that file permission *bits* (e.g. `0600`
+  on a sensitive file) aren't meaningful on Windows/NTFS the way they are on macOS/Linux, so
+  that part of the fix-apply behavior is best-effort there. If something's off, please open an
+  issue.
 
 ## Structure
 
@@ -162,6 +195,19 @@ install.sh          macOS/Linux installer: builds from source, wires up Lazygit
 install.ps1         Windows installer: same, in PowerShell
 lazygit/config.yml  customCommands entry to copy into your Lazygit config by hand
 ```
+
+## Development
+
+```bash
+git clone https://github.com/JeffreyCq/auri-lazygit.git
+cd auri-lazygit
+go build ./...      # or: make build
+go vet ./...
+go test ./...        # or: make test
+```
+
+No linter or formatter config beyond `gofmt`/`go vet` — run those before sending a change.
+Tests use real `git` and a real `go build`/`go test`, no network calls or external services.
 
 ## License
 

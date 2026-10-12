@@ -11,7 +11,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -61,9 +60,9 @@ func target(f findings.Finding) (eco, name, from, to string, err error) {
 		return "", "", "", "", noAutoFix("malicious package: remove it, rotate any exposed credentials, and install the legitimate package")
 	}
 	if f.Upgrade != nil && f.Upgrade.To != "" {
-		// The ref's own version suffix (if any) is the recommended/fixed
-		// version, not the currently installed one — always take "from"
-		// from Upgrade.From instead of parsing it out of the ref.
+		// El sufijo de versión del propio ref (si lo tiene) es la versión
+		// recomendada/fija, no la instalada actualmente — "from" siempre se
+		// toma de Upgrade.From en vez de parsearlo del ref.
 		e, n, _ := findings.SplitRef(f.Upgrade.Package)
 		if n != "" {
 			if e == "" {
@@ -178,30 +177,6 @@ func (p *Plan) PostCommand() string {
 		return "cargo update -p " + p.Package
 	}
 	return ""
-}
-
-// BranchName propone un nombre de rama seguro para git.
-func (p *Plan) BranchName() string {
-	slug := regexp.MustCompile(`[^a-z0-9._-]+`).ReplaceAllString(strings.ToLower(p.Package+"-"+p.To), "-")
-	slug = strings.Trim(slug, "-.")
-	slug = strings.ReplaceAll(slug, "..", ".")
-	if len(slug) > 50 {
-		slug = strings.Trim(slug[:50], "-.")
-	}
-	return "auri/fix-" + slug
-}
-
-// CommitMessage devuelve un mensaje estilo Conventional Commits.
-func (p *Plan) CommitMessage(ids []string) string {
-	from := p.From
-	if from == "" {
-		from = "?"
-	}
-	msg := fmt.Sprintf("fix(deps): bump %s from %s to %s", p.Package, from, p.To)
-	if len(ids) > 0 {
-		msg += "\n\nResolves " + strings.Join(ids, ", ") + " (reported by AURI / Endor Labs)."
-	}
-	return msg
 }
 
 // ---- búsqueda de manifiestos ----

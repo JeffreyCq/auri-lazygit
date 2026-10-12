@@ -1,9 +1,10 @@
-// Package deps discovers dependency manifests in a directory tree (package.json,
-// go.mod, requirements.txt/pyproject.toml, pom.xml) and extracts the
-// (ecosystem, name, version) triples declared in them. It intentionally only
-// resolves dependencies pinned to a single concrete version: a range or alias
-// can't be looked up against a vulnerability database without picking a
-// version first, so those are skipped rather than guessed at.
+// Package deps descubre manifiestos de dependencias en un árbol de
+// directorios (package.json, go.mod, requirements.txt/pyproject.toml,
+// pom.xml) y extrae de ellos las tripletas (ecosistema, nombre, versión)
+// declaradas. Deliberadamente solo resuelve dependencias fijadas a una
+// versión concreta: un rango o alias no se puede consultar contra una base
+// de datos de vulnerabilidades sin antes elegir una versión, así que esos
+// casos se omiten en vez de adivinarlos.
 package deps
 
 import (
@@ -16,30 +17,30 @@ import (
 	"strings"
 )
 
-// Dependency is one resolved (ecosystem, name, version) triple found in one
-// or more manifests.
+// Dependency es una tripleta (ecosistema, nombre, versión) resuelta,
+// encontrada en uno o más manifiestos.
 type Dependency struct {
 	Ecosystem string // npm, go, pypi, maven
 	Name      string
 	Version   string
-	Direct    bool     // false only for go.mod "// indirect" requires
-	Manifests []string // relative paths (with "/") where this was declared
+	Direct    bool     // false solo para requires de go.mod con "// indirect"
+	Manifests []string // rutas relativas (con "/") donde se declaró
 }
 
-// Manifest is a dependency file found on disk.
+// Manifest es un archivo de dependencias encontrado en disco.
 type Manifest struct {
-	Path      string // relative to the scanned dir, with "/"
+	Path      string // relativa al directorio escaneado, con "/"
 	Ecosystem string
 }
 
-// Result is the outcome of a Discover call.
+// Result es el resultado de una llamada a Discover.
 type Result struct {
 	Dependencies []Dependency
-	Manifests    []Manifest // manifests we found and parsed
-	Unsupported  []Manifest // manifests we found but can't query (cargo, gem, ...)
+	Manifests    []Manifest // manifiestos encontrados y parseados
+	Unsupported  []Manifest // manifiestos encontrados pero no consultables (cargo, gem, ...)
 }
 
-var manifestNames = map[string]string{ // base filename -> ecosystem
+var manifestNames = map[string]string{ // nombre de archivo -> ecosistema
 	"package.json":   "npm",
 	"go.mod":         "go",
 	"pyproject.toml": "pypi",
@@ -53,8 +54,8 @@ var unsupportedNames = map[string]string{
 	"composer.json":   "packagist",
 }
 
-// EcosystemFor classifies a manifest by its base filename. supported is false
-// for recognized-but-unqueryable manifests (Cargo.toml, Gemfile, ...).
+// EcosystemFor clasifica un manifiesto por su nombre de archivo. supported es
+// false para manifiestos reconocidos pero no consultables (Cargo.toml, Gemfile, ...).
 func EcosystemFor(base string) (eco string, supported bool) {
 	if eco, ok := manifestNames[base]; ok {
 		return eco, true
@@ -78,8 +79,8 @@ type foundManifest struct {
 	eco string
 }
 
-// Discover walks dir (depth-limited, skipping build/VCS directories) and
-// parses every dependency manifest it recognizes.
+// Discover recorre dir (con límite de profundidad, omitiendo directorios de
+// build/VCS) y parsea cada manifiesto de dependencias que reconoce.
 func Discover(dir string) (*Result, error) {
 	res := &Result{}
 	var supported []foundManifest
@@ -113,9 +114,9 @@ func Discover(dir string) (*Result, error) {
 	return parseManifests(dir, res, supported)
 }
 
-// DiscoverFiles classifies and parses only the given file paths (relative to
-// dir, with "/" or OS separators), skipping any directory walk. Used to scope
-// a scan to a specific set of changed files.
+// DiscoverFiles clasifica y parsea solo las rutas de archivo dadas
+// (relativas a dir, con "/" o separadores del SO), sin recorrer directorios.
+// Se usa para acotar un escaneo a un conjunto específico de archivos cambiados.
 func DiscoverFiles(dir string, files []string) (*Result, error) {
 	res := &Result{}
 	var supported []foundManifest
@@ -251,8 +252,8 @@ func parsePackageJSON(src string) []rawEntry {
 	return out
 }
 
-// cleanNPMVersion strips range prefixes (^, ~, >=, etc.) and rejects aliases
-// that aren't a concrete version (workspace:, file:, git+, latest, *, npm:).
+// cleanNPMVersion quita los prefijos de rango (^, ~, >=, etc.) y rechaza
+// alias que no son una versión concreta (workspace:, file:, git+, latest, *, npm:).
 func cleanNPMVersion(v string) string {
 	v = strings.TrimSpace(v)
 	v = strings.TrimLeft(v, "^~>=<| ")
@@ -292,12 +293,7 @@ func parseGoMod(src string) []rawEntry {
 		if m == nil {
 			continue
 		}
-		name, version, rest := m[1], m[2], ""
-		if inBlock {
-			rest = m[3]
-		} else {
-			rest = m[3]
-		}
+		name, version, rest := m[1], m[2], m[3]
 		direct := !strings.Contains(rest, "// indirect")
 		out = append(out, rawEntry{name: name, version: version, direct: direct})
 	}
@@ -354,7 +350,7 @@ func parsePyprojectToml(src string) []rawEntry {
 		if m == nil || strings.EqualFold(m[1], "python") {
 			continue
 		}
-		v := cleanNPMVersion(m[2]) // same prefix-stripping rule (^, ~, >=...)
+		v := cleanNPMVersion(m[2]) // misma regla de recorte de prefijos (^, ~, >=...)
 		if v == "" || seen[m[1]] {
 			continue
 		}

@@ -1,13 +1,11 @@
-// Package demo crea un repositorio de ejemplo y hallazgos de muestra (en el
-// formato de Endor Labs) para probar la TUI sin cuenta ni red: `auri-tui --demo`.
+// Package demo contiene datos de muestra (en el formato de Endor Labs) usados
+// como fixture en los tests de otros paquetes: hallazgos de ejemplo
+// (FindingsJSON) y el contenido de un repositorio ficticio (Files) sobre el
+// que esos hallazgos apuntan.
 package demo
 
 import (
 	_ "embed"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
 )
 
 //go:embed findings.json
@@ -88,60 +86,4 @@ AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 REGION = "us-east-1"
 `,
-}
-
-// Setup crea un repositorio git temporal con dos commits y devuelve su ruta.
-// El segundo commit añade config/settings.py, de modo que `HEAD~1` es un commit escaneable.
-func Setup() (dir string, cleanup func(), err error) {
-	dir, err = os.MkdirTemp("", "auri-demo-")
-	if err != nil {
-		return "", nil, err
-	}
-	cleanup = func() { _ = os.RemoveAll(dir) }
-	fail := func(e error) (string, func(), error) {
-		cleanup()
-		return "", nil, e
-	}
-	write := func(rel string) error {
-		p := filepath.Join(dir, rel)
-		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
-			return err
-		}
-		return os.WriteFile(p, []byte(Files[rel]), 0o644)
-	}
-	git := func(args ...string) error {
-		cmd := exec.Command("git", append([]string{"-c", "user.name=AURI Demo", "-c", "user.email=demo@example.com", "-c", "commit.gpgsign=false"}, args...)...)
-		cmd.Dir = dir
-		if out, e := cmd.CombinedOutput(); e != nil {
-			return fmt.Errorf("git %v: %v: %s", args, e, out)
-		}
-		return nil
-	}
-	if err := git("init", "-q", "-b", "main"); err != nil {
-		return fail(err)
-	}
-	for rel := range Files {
-		if rel == "config/settings.py" {
-			continue
-		}
-		if err := write(rel); err != nil {
-			return fail(err)
-		}
-	}
-	if err := git("add", "-A"); err != nil {
-		return fail(err)
-	}
-	if err := git("commit", "-q", "-m", "feat: API base de la tienda"); err != nil {
-		return fail(err)
-	}
-	if err := write("config/settings.py"); err != nil {
-		return fail(err)
-	}
-	if err := git("add", "-A"); err != nil {
-		return fail(err)
-	}
-	if err := git("commit", "-q", "-m", "chore: añade configuración de despliegue"); err != nil {
-		return fail(err)
-	}
-	return dir, cleanup, nil
 }

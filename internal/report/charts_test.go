@@ -88,18 +88,6 @@ func TestRiskMeter(t *testing.T) {
 	}
 }
 
-func TestSparklineAndDelta(t *testing.T) {
-	if got := Sparkline([]int{0, 1, 4, 8}); got != "▁▂▅█" {
-		t.Fatalf("sparkline = %q", got)
-	}
-	if Sparkline(nil) != "" {
-		t.Fatal("vacío")
-	}
-	if !strings.Contains(plain(Delta(5, 3)), "2 fewer") || !strings.Contains(plain(Delta(3, 5)), "2 more") {
-		t.Fatal("delta")
-	}
-}
-
 func TestEmptyCategories(t *testing.T) {
 	if !strings.Contains(plain(CategoryBars(nil, 10)), "no findings") {
 		t.Fatal("categorías vacías")

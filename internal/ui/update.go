@@ -13,7 +13,7 @@ import (
 	"auri-lazygit/internal/mcpscan"
 )
 
-// Update implements tea.Model.
+// Update implementa tea.Model.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -101,7 +101,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ---------- target menu ----------
+// ---------- menú de objetivo ----------
 
 func (m Model) keysMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
@@ -129,7 +129,7 @@ func (m Model) keysMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// dispatchTarget runs once the MCP connection is ready (or was already up).
+// dispatchTarget se ejecuta cuando la conexión MCP ya está lista (o ya lo estaba).
 func (m *Model) dispatchTarget(target targetKind) tea.Cmd {
 	switch target {
 	case targetLocalChanges:
@@ -194,7 +194,7 @@ func plural(n int) string {
 	return "s"
 }
 
-// ---------- commit picker ----------
+// ---------- selector de commit ----------
 
 func (m Model) keysCommitPick(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.commitTyping {
@@ -244,7 +244,7 @@ func (m Model) keysCommitPick(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// selectCommit resolves ref, checks it out into a disposable worktree, and starts a scan there.
+// selectCommit resuelve ref, lo extrae a un worktree desechable e inicia el escaneo ahí.
 func (m Model) selectCommit(ref string) (tea.Model, tea.Cmd) {
 	commit, err := gitx.ResolveCommit(m.repoRoot, ref)
 	if err != nil {
@@ -265,7 +265,7 @@ func (m Model) selectCommit(ref string) (tea.Model, tea.Cmd) {
 	return m, m.beginScan()
 }
 
-// ---------- scanning ----------
+// ---------- escaneo ----------
 
 func (m *Model) beginScan() tea.Cmd {
 	m.screen = scScanning
@@ -329,7 +329,7 @@ func (m Model) keysScanning(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ---------- scan results ----------
+// ---------- resultados del escaneo ----------
 
 func (m Model) keysScanResults(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	n := 0
@@ -356,7 +356,7 @@ func (m Model) keysScanResults(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ---------- fix review ----------
+// ---------- revisión de arreglos ----------
 
 func (m *Model) startFixReview() tea.Cmd {
 	if m.scanResult == nil {
@@ -413,7 +413,7 @@ func (m Model) keysFixReview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ---------- MCP tool browser (advanced fallback) ----------
+// ---------- navegador de herramientas MCP (alternativa avanzada) ----------
 
 func (m Model) keysMCPTools(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
@@ -502,7 +502,7 @@ func (m Model) keysRawToolResult(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// invokeTool calls an MCP tool and returns the result.
+// invokeTool llama a una herramienta MCP y devuelve el resultado.
 func (m *Model) invokeTool(toolName string, args map[string]interface{}) tea.Cmd {
 	client := m.mcpClient
 	return func() tea.Msg {

@@ -54,9 +54,10 @@ func wrap(s string, w int) string {
 	return strings.Join(result, "\n")
 }
 
-// fmtElapsed formats an elapsed time derived from the scanning screen's
-// 150ms spinner tick counter as "12s" or "1m05s", for scans (like the
-// secrets engine) that have no per-item progress count to show instead.
+// fmtElapsed formatea un tiempo transcurrido, derivado del contador de ticks
+// del spinner (150ms) de la pantalla de escaneo, como "12s" o "1m05s", para
+// escaneos (como el motor de secretos) que no tienen un conteo de progreso
+// por ítem que mostrar en su lugar.
 func fmtElapsed(spinnerFrame int) string {
 	secs := spinnerFrame * 150 / 1000
 	if secs < 60 {

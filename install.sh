@@ -25,21 +25,100 @@ echo "  AURI x Lazygit installer"
 echo "  ------------------------"
 echo ""
 
-# ---- prerequisites -----------------------------------------------------
+# ---- requirements check --------------------------------------------------
+# Check everything up front and report the full picture in one pass, instead
+# of failing on the first missing tool, having the user fix it, rerun, and
+# hit the next one.
 
-if ! have go; then
-  err "Go is required to build auri-tui, but wasn't found on your PATH."
+info "Checking requirements..."
+
+MIN_GO_MAJOR=1
+MIN_GO_MINOR=24
+MIN_NODE_MAJOR=18
+hard_failures=()
+node_warning=""
+
+check() {
+  # check <ok:0|1> <label> <detail>
+  if [ "$1" -eq 0 ]; then
+    printf '      \033[32m[ok]\033[0m  %-10s %s\n' "$2" "$3"
+  else
+    printf '      \033[31m[--]\033[0m  %-10s %s\n' "$2" "$3"
+  fi
+}
+
+ver_ge() { # ver_ge a.b a.b  -> 0 if first >= second
+  [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$2" ]
+}
+
+if have git; then
+  check 0 git "$(git --version 2>/dev/null)"
+else
+  check 1 git "not found on PATH"
+  hard_failures+=("git is required to fetch the source, but wasn't found on your PATH.")
+fi
+
+if have go; then
+  go_raw="$(go version 2>/dev/null)"  # "go version go1.27.0 darwin/arm64"
+  go_num="$(printf '%s' "$go_raw" | sed -n 's/.*go\([0-9]*\.[0-9]*\(\.[0-9]*\)\?\).*/\1/p')"
+  if [ -n "$go_num" ] && ver_ge "$go_num" "${MIN_GO_MAJOR}.${MIN_GO_MINOR}"; then
+    check 0 Go "$go_raw"
+  else
+    check 1 Go "$go_raw (need >= ${MIN_GO_MAJOR}.${MIN_GO_MINOR})"
+    hard_failures+=("Go ${MIN_GO_MAJOR}.${MIN_GO_MINOR}+ is required to build auri-tui (found: $go_raw).")
+  fi
+else
+  check 1 Go "not found on PATH"
+  hard_failures+=("Go ${MIN_GO_MAJOR}.${MIN_GO_MINOR}+ is required to build auri-tui, but wasn't found on your PATH.")
+fi
+
+if have npx; then
+  node_raw="$(node --version 2>/dev/null)"  # "v24.14.1"
+  node_major="$(printf '%s' "$node_raw" | sed -n 's/^v\([0-9]*\).*/\1/p')"
+  if [ -n "$node_major" ] && [ "$node_major" -ge "$MIN_NODE_MAJOR" ]; then
+    check 0 Node.js "$node_raw"
+  else
+    check 1 Node.js "$node_raw (need >= v${MIN_NODE_MAJOR}, for npx)"
+    node_warning="Node.js v${MIN_NODE_MAJOR}+ is recommended (found: $node_raw) — auri-tui launches the Endor Labs MCP server via npx."
+  fi
+else
+  check 1 Node.js "not found on PATH (needed to run auri-tui, not to build it)"
+  node_warning="Node.js (npx) wasn't found. auri-tui needs it to launch the Endor Labs MCP server."
+fi
+
+if have lazygit; then
+  check 0 lazygit "$(lazygit --version 2>/dev/null) (optional)"
+else
+  check 1 lazygit "not found on PATH (optional — install to get the Ctrl+A keybinding wired up automatically)"
+fi
+
+echo ""
+
+if [ "${#hard_failures[@]}" -gt 0 ]; then
+  err "Missing requirements — install these first, then rerun this script:"
+  echo ""
+  for f in "${hard_failures[@]}"; do
+    err "$f"
+  done
   case "$(uname -s)" in
-    Darwin) err "Install it with:  brew install go" ;;
-    *)      err "Install it with your package manager, or see https://go.dev/dl/" ;;
+    Darwin) err "macOS:  brew install go git" ;;
+    *)      err "Linux:  use your package manager, or see https://go.dev/dl/ and https://git-scm.com/" ;;
   esac
+  echo ""
   exit 1
 fi
 
-if ! have git; then
-  err "git is required to fetch the source, but wasn't found on your PATH."
-  exit 1
+if [ -n "$node_warning" ]; then
+  warn "$node_warning"
+  case "$(uname -s)" in
+    Darwin) warn "Install it with:  brew install node" ;;
+    *)      warn "Install it with your package manager, or see https://nodejs.org/" ;;
+  esac
+  echo ""
 fi
+
+info "All required tools are present. Continuing..."
+echo ""
 
 # ---- fetch source -------------------------------------------------------
 
@@ -58,14 +137,6 @@ mkdir -p "$BIN_DIR"
 (cd "$SRC_DIR" && go build -ldflags "-s -w" -o "$BIN_DIR/$BIN_NAME" ./cmd/auri-tui)
 chmod +x "$BIN_DIR/$BIN_NAME"
 info "Installed $BIN_DIR/$BIN_NAME"
-
-if ! have npx; then
-  warn "Node.js (npx) wasn't found. auri-tui needs it to launch the Endor Labs MCP server."
-  case "$(uname -s)" in
-    Darwin) warn "Install it with:  brew install node" ;;
-    *)      warn "Install it with your package manager, or see https://nodejs.org/" ;;
-  esac
-fi
 
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;

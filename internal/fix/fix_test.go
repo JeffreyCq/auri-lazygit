@@ -284,18 +284,3 @@ func TestBuildFindsNestedManifestsAndSkipsNodeModules(t *testing.T) {
 	}
 }
 
-func TestBranchAndCommitMessage(t *testing.T) {
-	p := &Plan{Package: "@scope/Pkg_Name", From: "1.0.0", To: "2.0.0+build"}
-	b := p.BranchName()
-	t.Logf("rama=%q", b)
-	if !strings.HasPrefix(b, "auri/fix-") || strings.ContainsAny(b, " @/:~^?*[\\") && strings.Contains(strings.TrimPrefix(b, "auri/"), "/") {
-		t.Errorf("rama insegura: %q", b)
-	}
-	if strings.Contains(b, "..") || strings.HasSuffix(b, ".") || strings.HasSuffix(b, "-") {
-		t.Errorf("rama inválida: %q", b)
-	}
-	msg := p.CommitMessage([]string{"CVE-1", "GHSA-2"})
-	if !strings.HasPrefix(msg, "fix(deps): bump @scope/Pkg_Name from 1.0.0 to 2.0.0+build") || !strings.Contains(msg, "CVE-1, GHSA-2") {
-		t.Errorf("mensaje: %q", msg)
-	}
-}

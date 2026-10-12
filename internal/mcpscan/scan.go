@@ -1,17 +1,20 @@
-// Package mcpscan turns a repository on disk into normalized
-// findings.Finding records via the Endor Labs MCP server. It has two
-// engines, both confirmed working on the free Developer Edition tier:
+// Package mcpscan convierte un repositorio en disco en registros
+// findings.Finding normalizados, vía el servidor MCP de Endor Labs. Tiene
+// dos motores, ambos confirmados como funcionales en el nivel gratuito
+// Developer Edition:
 //
-//   - Dependency (SCA/malware) scanning in this file: discovers manifests
-//     locally (internal/deps) and queries check_dependency_for_risks +
-//     get_endor_vulnerability once per unique dependency. This is
-//     dependency-by-dependency rather than a single repo-wide call because
-//     it lets "Local Changes" scope the scan to just the changed manifests.
-//   - Secrets scanning in secrets.go: a single call to the MCP `scan` tool
-//     (scan_types: ["secrets"]), which runs Endor's real secrets scanner
-//     over the whole working tree server-side. It has no per-file
-//     granularity, can take minutes, and requires the repo to have a git
-//     origin remote configured — none of which apply to the SCA engine.
+//   - Escaneo de dependencias (SCA/malware) en este archivo: descubre los
+//     manifiestos localmente (internal/deps) y consulta
+//     check_dependency_for_risks + get_endor_vulnerability una vez por cada
+//     dependencia única. Es dependencia por dependencia en vez de una sola
+//     llamada para todo el repo porque así "Local Changes" puede acotar el
+//     escaneo solo a los manifiestos cambiados.
+//   - Escaneo de secretos en secrets.go: una sola llamada a la herramienta
+//     MCP `scan` (scan_types: ["secrets"]), que corre el escáner de
+//     secretos real de Endor sobre todo el árbol de trabajo en el
+//     servidor. No tiene granularidad por archivo, puede tardar minutos, y
+//     exige que el repo tenga un remoto git origin configurado — nada de
+//     esto aplica al motor SCA.
 package mcpscan
 
 import (
@@ -26,47 +29,47 @@ import (
 	"auri-lazygit/internal/mcp"
 )
 
-// Progress reports advancement of a Run call. Phase is "deps" while checking
-// each dependency for risk, then "advisories" while resolving full details
-// for every distinct vulnerability found.
+// Progress informa el avance de una llamada a Run. Phase es "deps" mientras
+// se revisa el riesgo de cada dependencia, y luego "advisories" mientras se
+// resuelven los detalles completos de cada vulnerabilidad distinta encontrada.
 type Progress struct {
 	Phase       string
 	Done, Total int
 	Current     string
 }
 
-// Result is the normalized outcome of a scan, from either engine.
+// Result es el resultado normalizado de un escaneo, de cualquiera de los dos motores.
 type Result struct {
-	Kind string // "deps" (SCA/malware, the default) or "secrets"
+	Kind string // "deps" (SCA/malware, el motor por defecto) o "secrets"
 
 	Findings     []findings.Finding
-	Dependencies int // unique dependencies checked (deps engine only)
-	Vulnerable   int // dependencies with at least one known issue (deps engine only)
+	Dependencies int // dependencias únicas revisadas (solo motor deps)
+	Vulnerable   int // dependencias con al menos un problema conocido (solo motor deps)
 	Manifests    []deps.Manifest
-	Unsupported  []deps.Manifest // manifests found but not queryable (cargo, gem, ...)
-	Errors       []string        // non-fatal per-dependency / per-advisory lookup errors
+	Unsupported  []deps.Manifest // manifiestos encontrados pero no consultables (cargo, gem, ...)
+	Errors       []string        // errores no fatales de consulta por dependencia/aviso
 }
 
-// ecosystemToMCP maps deps.Dependency.Ecosystem to the enum values
-// check_dependency_for_risks accepts.
+// ecosystemToMCP mapea deps.Dependency.Ecosystem a los valores enum que
+// acepta check_dependency_for_risks.
 var ecosystemToMCP = map[string]string{
 	"npm": "npm", "go": "go", "pypi": "python", "maven": "maven",
 }
 
 const workers = 4
 
-// Run discovers dependency manifests under dir and queries the MCP server
-// for every unique dependency, then resolves full advisory details for every
-// vulnerability referenced. client must already be initialized. progress may
-// be nil; when set, it is called from scan worker goroutines and must not
-// block.
+// Run descubre manifiestos de dependencias bajo dir y consulta al servidor
+// MCP por cada dependencia única, luego resuelve los detalles completos de
+// cada vulnerabilidad referenciada. client ya debe estar inicializado.
+// progress puede ser nil; cuando se define, se llama desde las goroutines
+// worker del escaneo y no debe bloquear.
 func Run(ctx context.Context, client *mcp.Client, dir string, progress func(Progress)) (*Result, error) {
 	return run(ctx, client, func() (*deps.Result, error) { return deps.Discover(dir) }, progress)
 }
 
-// RunFiles is like Run but scopes manifest discovery to the given file paths
-// (relative to dir) instead of walking the whole tree. Used to scan only the
-// files with uncommitted changes.
+// RunFiles es como Run pero acota el descubrimiento de manifiestos a las
+// rutas de archivo dadas (relativas a dir) en vez de recorrer todo el
+// árbol. Se usa para escanear solo los archivos con cambios sin commitear.
 func RunFiles(ctx context.Context, client *mcp.Client, dir string, files []string, progress func(Progress)) (*Result, error) {
 	return run(ctx, client, func() (*deps.Result, error) { return deps.DiscoverFiles(dir, files) }, progress)
 }
@@ -212,7 +215,7 @@ func run(ctx context.Context, client *mcp.Client, discover func() (*deps.Result,
 	return res, nil
 }
 
-// runPool runs fn(i) for i in [0,n) across a small fixed worker pool.
+// runPool ejecuta fn(i) para i en [0,n) repartido en un pool fijo pequeño de workers.
 func runPool(n int, fn func(i int)) {
 	if n == 0 {
 		return

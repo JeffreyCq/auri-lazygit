@@ -1,10 +1,10 @@
-// auri-tui: MCP integration for Endor Labs tools
+// auri-tui: integración MCP para las herramientas de Endor Labs.
 //
-// A minimal terminal interface to interact with the Endor MCP server.
-// Usage:
+// Una interfaz de terminal mínima para interactuar con el servidor MCP de
+// Endor. Uso:
 //
-//	auri-tui                 # Open the MCP tools menu
-//	auri-tui --version       # Show version
+//	auri-tui                 # abre el menú de herramientas MCP
+//	auri-tui --version       # muestra la versión
 package main
 
 import (

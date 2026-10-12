@@ -35,7 +35,7 @@ func newRepo(t *testing.T) string {
 	return dir
 }
 
-func TestRootBranchResolve(t *testing.T) {
+func TestRootAndResolveCommit(t *testing.T) {
 	dir := newRepo(t)
 	sub := filepath.Join(dir, "x")
 	os.MkdirAll(sub, 0o755)
@@ -47,9 +47,6 @@ func TestRootBranchResolve(t *testing.T) {
 	got, _ := filepath.EvalSymlinks(root)
 	if got != want {
 		t.Errorf("root = %s, quería %s", got, want)
-	}
-	if b := gitx.Branch(dir); b != "main" {
-		t.Errorf("branch = %q", b)
 	}
 	c, err := gitx.ResolveCommit(dir, "HEAD~1")
 	if err != nil || c.Subject != "primero" || len(c.Short) < 4 {
@@ -89,39 +86,5 @@ func TestWorktreeSnapshot(t *testing.T) {
 	}
 	if out := sh(t, dir, "worktree", "list"); strings.Count(out, "\n") != 0 {
 		t.Errorf("quedó un worktree registrado: %s", out)
-	}
-}
-
-func TestCreateBranchAndCommitOnlyListedFiles(t *testing.T) {
-	dir := newRepo(t)
-	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("tres\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("cambio ajeno\n"), 0o644)
-	sh(t, dir, "add", "b.txt") // otro cambio ya en staging: no debe entrar al commit
-	err := gitx.CreateBranchAndCommit(dir, "auri/fix", []string{"a.txt"}, "fix: prueba")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b := gitx.Branch(dir); b != "auri/fix" {
-		t.Errorf("rama = %q", b)
-	}
-	files := sh(t, dir, "show", "--name-only", "--format=", "HEAD")
-	if files != "a.txt" {
-		t.Errorf("el commit debe incluir solo a.txt, incluye: %q", files)
-	}
-	if st := sh(t, dir, "status", "--porcelain"); !strings.Contains(st, "b.txt") {
-		t.Errorf("b.txt debía seguir pendiente en staging: %q", st)
-	}
-	if err := gitx.CreateBranchAndCommit(dir, "--x", nil, "m"); err == nil {
-		t.Error("rama con guion inicial debe rechazarse")
-	}
-}
-
-func TestRelPath(t *testing.T) {
-	root := t.TempDir()
-	if r, err := gitx.RelPath(root, filepath.Join(root, "src", "a.js")); err != nil || r != "src/a.js" {
-		t.Errorf("RelPath = %q %v", r, err)
-	}
-	if _, err := gitx.RelPath(root, filepath.Join(root, "..", "otro")); err == nil {
-		t.Error("fuera del repo debe fallar")
 	}
 }

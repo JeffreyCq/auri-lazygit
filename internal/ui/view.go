@@ -28,7 +28,7 @@ var (
 
 var spinnerFrames = []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
 
-// View implements tea.Model.
+// View implementa tea.Model.
 func (m Model) View() string {
 	w, h := m.w, m.h
 	if w < 40 || h < 12 {
@@ -74,7 +74,7 @@ func (m Model) header(w int) string {
 	return trunc(s, w)
 }
 
-// ---------- target menu ----------
+// ---------- menú de objetivo ----------
 
 func (m Model) viewMenu(w, h int) (string, string) {
 	var b strings.Builder
@@ -170,7 +170,7 @@ func (m Model) viewMenu(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- commit picker ----------
+// ---------- selector de commit ----------
 
 func (m Model) viewCommitPick(w, h int) (string, string) {
 	var b strings.Builder
@@ -214,7 +214,7 @@ func (m Model) viewCommitPick(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- scanning ----------
+// ---------- escaneo ----------
 
 func (m Model) viewScanning(w, h int) (string, string) {
 	var b strings.Builder
@@ -256,7 +256,7 @@ func (m Model) viewScanning(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- scan results ----------
+// ---------- resultados del escaneo ----------
 
 func (m Model) viewScanResults(w, h int) (string, string) {
 	var b strings.Builder
@@ -341,7 +341,7 @@ func (m Model) viewScanResults(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- fix review ----------
+// ---------- revisión de arreglos ----------
 
 func (m Model) viewFixReview(w, h int) (string, string) {
 	var b strings.Builder
@@ -422,7 +422,7 @@ func renderDiff(lines []fix.DiffLine, w int) string {
 	return b.String()
 }
 
-// ---------- MCP tool browser (advanced fallback) ----------
+// ---------- navegador de herramientas MCP (alternativa avanzada) ----------
 
 func (m Model) viewMCPTools(w, h int) (string, string) {
 	var b strings.Builder
@@ -465,7 +465,7 @@ func (m Model) viewMCPTools(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- tool input ----------
+// ---------- entrada de la herramienta ----------
 
 func (m Model) viewToolInput(w, h int) (string, string) {
 	var b strings.Builder
@@ -512,7 +512,7 @@ func (m Model) viewToolInput(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- edit parameter ----------
+// ---------- editar parámetro ----------
 
 func (m Model) viewEditParam(w, h int) (string, string) {
 	var b strings.Builder
@@ -525,7 +525,7 @@ func (m Model) viewEditParam(w, h int) (string, string) {
 	return b.String(), foot
 }
 
-// ---------- raw tool result ----------
+// ---------- resultado crudo de la herramienta ----------
 
 func (m Model) viewRawToolResult(w, h int) (string, string) {
 	var b strings.Builder
@@ -543,10 +543,7 @@ func (m Model) viewRawToolResult(w, h int) (string, string) {
 
 	b.WriteString("\n" + sAccent.Render("  Tool Output:") + "\n\n")
 	for _, line := range strings.Split(m.resultOutput, "\n") {
-		if len(line) > w-4 {
-			line = line[:w-4]
-		}
-		b.WriteString("  " + line + "\n")
+		b.WriteString("  " + trunc(line, w-4) + "\n")
 	}
 
 	foot := " esc back · q quit"

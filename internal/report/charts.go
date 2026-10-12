@@ -285,45 +285,6 @@ func gradient(pos float64) lipgloss.Color {
 	return stops[i]
 }
 
-var sparkRunes = []rune("▁▂▃▄▅▆▇█")
-
-// Sparkline convierte una serie en bloques ▁▂▃▄▅▆▇█ (escala relativa al máximo).
-func Sparkline(vals []int) string {
-	if len(vals) == 0 {
-		return ""
-	}
-	max := 0
-	for _, v := range vals {
-		if v > max {
-			max = v
-		}
-	}
-	out := make([]rune, len(vals))
-	for i, v := range vals {
-		switch {
-		case v <= 0 || max == 0:
-			out[i] = sparkRunes[0]
-		default:
-			idx := int(math.Round(float64(v) / float64(max) * float64(len(sparkRunes)-1)))
-			out[i] = sparkRunes[idx]
-		}
-	}
-	return string(out)
-}
-
-// Delta formatea un cambio con flecha y color (menos es mejor).
-func Delta(prev, cur int) string {
-	d := cur - prev
-	switch {
-	case d == 0:
-		return fg(ColDim, "→ no change")
-	case d < 0:
-		return fg(ColOK, fmt.Sprintf("▼ %d fewer", -d))
-	default:
-		return fg(ColCritical, fmt.Sprintf("▲ %d more", d))
-	}
-}
-
 // Summary arma el panel completo de resumen (barra apilada + severidades + categorías + riesgo).
 func Summary(fs []findings.Finding, width int) string {
 	c := findings.Summarize(fs)
