@@ -34,13 +34,15 @@ func (m Model) View() string {
 	if w < 40 || h < 12 {
 		return "Terminal is too small (minimum 40×12). Make it larger to use auri-tui.\n"
 	}
-	bodyH := h - 3
+	bodyH := h - 5 // header + rule + repoStatus + rule + foot
 	var body, foot string
 	switch m.screen {
 	case scMenu:
 		body, foot = m.viewMenu(w, bodyH)
 	case scCommitPick:
 		body, foot = m.viewCommitPick(w, bodyH)
+	case scFolderPick:
+		body, foot = m.viewFolderPick(w, bodyH)
 	case scScanning:
 		body, foot = m.viewScanning(w, bodyH)
 	case scScanResults:
@@ -63,15 +65,55 @@ func (m Model) View() string {
 	if len(lines) > bodyH {
 		lines = lines[:bodyH]
 	}
-	return m.header(w) + "\n" + sDim.Render(strings.Repeat("─", w)) + "\n" + strings.Join(lines, "\n") + "\n" + sDim.Render(trunc(foot, w))
+	rule := sDim.Render(strings.Repeat("─", w))
+	top := m.header(w) + "\n" + rule + "\n" + m.repoStatus(w) + "\n" + rule
+	return top + "\n" + strings.Join(lines, "\n") + "\n" + sDim.Render(trunc(foot, w))
 }
 
 func (m Model) header(w int) string {
-	s := sBrand.Render("auri-tui") + " " + sDim.Render("AURI × Lazygit — Endor Labs MCP")
-	if m.gitOK {
-		s += "  " + sDim.Render(trunc(m.repoRoot, w/2))
-	}
+	s := sBrand.Render("auri-tui") + " " + sDim.Render("AURI — Endor Labs MCP")
 	return trunc(s, w)
+}
+
+// repoStatus muestra en qué carpeta está trabajando auri-tui ahora mismo y,
+// si es un repositorio git, en qué rama — igual que el prompt de una shell,
+// para que nunca haya duda de qué se va a escanear.
+func (m Model) repoStatus(w int) string {
+	var left string
+	if m.gitOK {
+		left = lipgloss.NewStyle().Foreground(report.ColAccent).Bold(true).Render("⎇ " + m.branch)
+	} else {
+		left = sWarn.Render("⚠ not a git repository")
+	}
+	rightW := w - lipgloss.Width(left) - 5
+	right := sDim.Render("📂 " + trunc(m.cwd, rightW))
+	return "  " + left + "   " + right
+}
+
+// connectingPanel dibuja el panel de "conectando al servidor MCP": el
+// spinner con el mensaje, el sobre viajando hacia Endor Labs, y una barra de
+// carga indeterminada debajo — se usa tanto en el menú como en el navegador
+// de herramientas MCP mientras no hay progreso medible que mostrar todavía.
+func connectingPanel(frame, w int) string {
+	var b strings.Builder
+	spin := spinnerFrames[frame%len(spinnerFrames)]
+	b.WriteString("  " + sAccent.Render(string(spin)+" Connecting to the Endor Labs MCP server...") + "\n\n")
+
+	animW := w - 30
+	if animW > 40 {
+		animW = 40
+	}
+	if animW < 10 {
+		animW = 10
+	}
+	b.WriteString("  " + sDim.Render("you") + "  " + mailAnimation(frame, animW) + "  " + sDim.Render("Endor Labs") + "\n\n")
+
+	barW := w - 6
+	if barW > 40 {
+		barW = 40
+	}
+	b.WriteString("  " + indeterminateBar(frame, barW) + "\n")
+	return b.String()
 }
 
 // ---------- menú de objetivo ----------
@@ -87,8 +129,7 @@ func (m Model) viewMenu(w, h int) (string, string) {
 	full := h >= 24 && w >= 60
 
 	if full {
-		b.WriteString("\n" + renderBanner() + "\n")
-		b.WriteString("  " + sDim.Render("Endor Labs security scanner, right inside Lazygit") + "\n\n")
+		b.WriteString("\n" + renderBanner(w) + "\n\n")
 	} else {
 		b.WriteString("\n")
 	}
@@ -150,7 +191,7 @@ func (m Model) viewMenu(w, h int) (string, string) {
 	}
 
 	if !m.gitOK {
-		b.WriteString("\n  " + sWarn.Render("No git repository detected — only Full Repository and Browse MCP Tools are available.") + "\n")
+		b.WriteString("\n  " + sWarn.Render("No git repository detected in this folder — pick Open Folder to choose one, or run Full Repository / Browse MCP Tools anyway.") + "\n")
 	}
 	if m.status != "" {
 		b.WriteString("\n  " + sWarn.Render(m.status) + "\n")
@@ -160,8 +201,7 @@ func (m Model) viewMenu(w, h int) (string, string) {
 		b.WriteString("  " + sDim.Render("Make sure npx and endorctl are installed and you're logged in (endorctl init).") + "\n")
 	}
 	if m.mcpConnecting {
-		frame := spinnerFrames[m.spinnerFrame%len(spinnerFrames)]
-		b.WriteString("\n  " + sAccent.Render(string(frame)+" Connecting to the Endor Labs MCP server...") + "\n")
+		b.WriteString("\n" + connectingPanel(m.spinnerFrame, w) + "\n")
 	}
 
 	b.WriteString("\n" + sDim.Render("  This is a manual pre-push check: scans run only when you ask, never automatically.") + "\n")
@@ -214,6 +254,42 @@ func (m Model) viewCommitPick(w, h int) (string, string) {
 	return b.String(), foot
 }
 
+// ---------- selector de carpeta ----------
+
+func (m Model) viewFolderPick(w, h int) (string, string) {
+	var b strings.Builder
+	b.WriteString("\n" + sAccent.Render("  Choose a folder to work in:") + "\n")
+	b.WriteString("  " + sDim.Render(trunc(m.fpDir, w-2)) + "\n\n")
+
+	if m.fpErr != nil {
+		b.WriteString("  " + sErr.Render("Error: "+m.fpErr.Error()) + "\n\n")
+	}
+
+	for i, e := range m.fpEntries {
+		cur := "  "
+		if i == m.fpCursor {
+			cur = sAccent.Render("▸ ")
+		}
+		var label string
+		switch e.kind {
+		case folderEntryUse:
+			label = sOK.Render("✓ Use this folder")
+		case folderEntryUp:
+			label = sDim.Render("📁 ..")
+		case folderEntrySub:
+			label = "📁 " + e.name
+		}
+		line := cur + label
+		if i == m.fpCursor {
+			line = sSelBg.Render(pad(line, w))
+		}
+		b.WriteString(line + "\n")
+	}
+
+	foot := " ↑↓ move · enter open/select · esc cancel"
+	return b.String(), foot
+}
+
 // ---------- escaneo ----------
 
 func (m Model) viewScanning(w, h int) (string, string) {
@@ -231,6 +307,13 @@ func (m Model) viewScanning(w, h int) (string, string) {
 		b.WriteString("  " + sBold.Render("Fetching vulnerability details") + "\n")
 	case "secrets":
 		b.WriteString("  " + sBold.Render(fmt.Sprintf("Running Endor Labs secrets scan... (%s elapsed)", fmtElapsed(m.spinnerFrame))) + "\n")
+	}
+	animW := w - 30
+	if animW > 40 {
+		animW = 40
+	}
+	if animW >= 10 {
+		b.WriteString("\n  " + sDim.Render("you") + "  " + mailAnimation(m.spinnerFrame, animW) + "  " + sDim.Render("Endor Labs") + "\n")
 	}
 	if p.Total > 0 {
 		frac := float64(p.Done) / float64(p.Total)
@@ -337,7 +420,13 @@ func (m Model) viewScanResults(w, h int) (string, string) {
 		b.WriteString(line + "\n")
 	}
 
-	foot := " ↑↓ move · f review & apply fixes · esc back to menu"
+	if m.exportMsg != "" {
+		b.WriteString("\n  " + sOK.Render("✓ "+m.exportMsg) + "\n")
+	} else if m.exportErr != nil {
+		b.WriteString("\n  " + sErr.Render("Export failed: "+m.exportErr.Error()) + "\n")
+	}
+
+	foot := " ↑↓ move · f review & apply fixes · e export report · esc back to menu"
 	return b.String(), foot
 }
 
@@ -356,7 +445,7 @@ func (m Model) viewFixReview(w, h int) (string, string) {
 		b.WriteString(fmt.Sprintf("  %s applied, %s skipped, out of %d finding(s).\n",
 			sOK.Render(fmt.Sprintf("%d", m.fixApplied)), sWarn.Render(fmt.Sprintf("%d", m.fixSkipped)), total))
 		if m.fixApplied > 0 {
-			b.WriteString("\n  " + sDim.Render("Review the changes in Lazygit and commit when you're ready.") + "\n")
+			b.WriteString("\n  " + sDim.Render("Review the changes with git diff and commit when you're ready.") + "\n")
 		}
 		return b.String(), " esc back to results"
 	}
@@ -428,8 +517,7 @@ func (m Model) viewMCPTools(w, h int) (string, string) {
 	var b strings.Builder
 
 	if m.mcpConnecting {
-		frame := spinnerFrames[m.spinnerFrame%len(spinnerFrames)]
-		b.WriteString("\n\n  " + sAccent.Render(string(frame)+" Connecting to MCP server...") + "\n")
+		b.WriteString("\n" + connectingPanel(m.spinnerFrame, w) + "\n")
 		return b.String(), " esc cancel"
 	}
 

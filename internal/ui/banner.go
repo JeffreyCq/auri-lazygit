@@ -69,17 +69,24 @@ func buildBanner(word string) []string {
 // "iluminado desde arriba" en vez de un bloque de color plano.
 var bannerColors = []lipgloss.Color{report.ColAccent, report.ColOK, report.ColLow, report.ColLow, report.ColBrand}
 
-// renderBanner dibuja el banner del título "AURI", con la misma sangría de
-// dos espacios que usa el resto de la UI como margen izquierdo.
-func renderBanner() string {
+// renderBanner dibuja el banner del título "AURI" centrado en un ancho w,
+// con una leyenda "by Endor Labs" debajo, pequeña y también centrada.
+func renderBanner(w int) string {
 	rows := buildBanner("AURI")
+	indent := strings.Repeat(" ", max0((w-lipgloss.Width(rows[0]))/2))
 	var b strings.Builder
 	for i, row := range rows {
 		c := bannerColors[i%len(bannerColors)]
-		b.WriteString("  " + lipgloss.NewStyle().Bold(true).Foreground(c).Render(row))
-		if i < len(rows)-1 {
-			b.WriteByte('\n')
-		}
+		b.WriteString(indent + lipgloss.NewStyle().Bold(true).Foreground(c).Render(row) + "\n")
 	}
+	caption := lipgloss.NewStyle().Foreground(report.ColDim).Render("by Endor Labs")
+	b.WriteString(centerText(caption, w))
 	return b.String()
+}
+
+func max0(n int) int {
+	if n < 0 {
+		return 0
+	}
+	return n
 }

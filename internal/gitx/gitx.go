@@ -33,6 +33,15 @@ func Root(dir string) (string, error) {
 	return run(dir, "rev-parse", "--show-toplevel")
 }
 
+// Branch devuelve la rama actual ("HEAD" si está desacoplado).
+func Branch(dir string) string {
+	b, err := run(dir, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return ""
+	}
+	return b
+}
+
 // Commit describe un commit.
 type Commit struct {
 	Hash, Short, Subject, Author string

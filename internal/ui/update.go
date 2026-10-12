@@ -3,6 +3,10 @@ package ui
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,6 +15,7 @@ import (
 	"auri-lazygit/internal/fix"
 	"auri-lazygit/internal/gitx"
 	"auri-lazygit/internal/mcpscan"
+	"auri-lazygit/internal/report"
 )
 
 // Update implementa tea.Model.
@@ -82,6 +87,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.keysMenu(msg)
 		case scCommitPick:
 			return m.keysCommitPick(msg)
+		case scFolderPick:
+			return m.keysFolderPick(msg)
 		case scScanning:
 			return m.keysScanning(msg)
 		case scScanResults:
@@ -114,6 +121,11 @@ func (m Model) keysMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.cursor = clamp(m.cursor+1, 0, len(m.items)-1)
 	case "enter", " ":
 		it := m.items[m.cursor]
+		if it.kind == targetOpenFolder {
+			m.status = ""
+			m.startFolderPick()
+			return m, nil
+		}
 		if (it.kind == targetLocalChanges || it.kind == targetCommit || it.kind == targetSecrets) && !m.gitOK {
 			m.status = "This target requires a git repository."
 			return m, nil
@@ -265,6 +277,72 @@ func (m Model) selectCommit(ref string) (tea.Model, tea.Cmd) {
 	return m, m.beginScan()
 }
 
+// ---------- selector de carpeta ----------
+
+// startFolderPick abre el selector de carpeta en la carpeta actual.
+func (m *Model) startFolderPick() {
+	m.fpErr = nil
+	m.loadFolderEntries(m.cwd)
+	m.screen = scFolderPick
+}
+
+// loadFolderEntries lista las subcarpetas de dir (sin ocultas) y arma las
+// filas del selector: usar esta carpeta, subir un nivel (si aplica), subcarpetas.
+func (m *Model) loadFolderEntries(dir string) {
+	m.fpDir = dir
+	m.fpCursor = 0
+	entries := []folderEntry{{kind: folderEntryUse}}
+	if parent := filepath.Dir(dir); parent != dir {
+		entries = append(entries, folderEntry{kind: folderEntryUp})
+	}
+	des, err := os.ReadDir(dir)
+	if err != nil {
+		m.fpErr = err
+		m.fpEntries = entries
+		return
+	}
+	var names []string
+	for _, d := range des {
+		if !d.IsDir() || strings.HasPrefix(d.Name(), ".") {
+			continue
+		}
+		names = append(names, d.Name())
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		entries = append(entries, folderEntry{kind: folderEntrySub, name: n})
+	}
+	m.fpErr = nil
+	m.fpEntries = entries
+}
+
+func (m Model) keysFolderPick(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "esc":
+		m.screen = scMenu
+	case "up", "k":
+		m.fpCursor = clamp(m.fpCursor-1, 0, len(m.fpEntries)-1)
+	case "down", "j":
+		m.fpCursor = clamp(m.fpCursor+1, 0, len(m.fpEntries)-1)
+	case "enter", " ":
+		if m.fpCursor >= len(m.fpEntries) {
+			return m, nil
+		}
+		switch e := m.fpEntries[m.fpCursor]; e.kind {
+		case folderEntryUse:
+			m.setWorkingDir(m.fpDir)
+			m.buildMenu()
+			m.screen = scMenu
+			m.status = "Now working in " + m.cwd
+		case folderEntryUp:
+			m.loadFolderEntries(filepath.Dir(m.fpDir))
+		case folderEntrySub:
+			m.loadFolderEntries(filepath.Join(m.fpDir, e.name))
+		}
+	}
+	return m, nil
+}
+
 // ---------- escaneo ----------
 
 func (m *Model) beginScan() tea.Cmd {
@@ -274,6 +352,8 @@ func (m *Model) beginScan() tea.Cmd {
 	m.scanErr = nil
 	m.resultCursor = 0
 	m.spinnerFrame = 0
+	m.exportMsg = ""
+	m.exportErr = nil
 	return tea.Batch(m.startScan(), tea.Tick(150*time.Millisecond, func(time.Time) tea.Msg { return tickMsg{} }))
 }
 
@@ -352,8 +432,37 @@ func (m Model) keysScanResults(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if n > 0 {
 			return m, m.startFixReview()
 		}
+	case "e":
+		if m.scanResult != nil {
+			m.exportReport()
+		}
 	}
 	return m, nil
+}
+
+// exportReport escribe los resultados del escaneo actual como un reporte
+// Markdown junto a la raíz del repositorio.
+func (m *Model) exportReport() {
+	res := m.scanResult
+	meta := report.MarkdownMeta{
+		Repo:         filepath.Base(m.repoRoot),
+		Branch:       m.branch,
+		Target:       m.scanLabel,
+		Kind:         res.Kind,
+		Dependencies: res.Dependencies,
+		Vulnerable:   res.Vulnerable,
+		GeneratedAt:  time.Now(),
+	}
+	md := report.Markdown(meta, res.Findings)
+	name := fmt.Sprintf("auri-report-%s.md", time.Now().Format("20060102-150405"))
+	path := filepath.Join(m.repoRoot, name)
+	if err := os.WriteFile(path, []byte(md), 0o644); err != nil {
+		m.exportErr = err
+		m.exportMsg = ""
+		return
+	}
+	m.exportErr = nil
+	m.exportMsg = "Report exported to " + path
 }
 
 // ---------- revisión de arreglos ----------

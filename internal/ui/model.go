@@ -20,6 +20,7 @@ type screen int
 const (
 	scMenu        screen = iota
 	scCommitPick         // choose a commit to scan
+	scFolderPick         // choose which folder/repo to work in
 	scScanning           // scan in progress, streaming progress
 	scScanResults        // chart summary + navigable finding list
 	scFixReview          // diff + apply/skip for one finding at a time
@@ -38,6 +39,7 @@ const (
 	targetFullRepo
 	targetSecrets
 	targetMCPBrowse
+	targetOpenFolder // no escanea nada: cambia de carpeta de trabajo
 )
 
 type menuItem struct {
@@ -46,6 +48,21 @@ type menuItem struct {
 	icon  string
 	kind  targetKind
 }
+
+// folderEntry es una fila del selector de carpetas: la carpeta actual
+// ("usar esta carpeta"), subir un nivel, o una subcarpeta.
+type folderEntry struct {
+	name string
+	kind folderEntryKind
+}
+
+type folderEntryKind int
+
+const (
+	folderEntryUse folderEntryKind = iota
+	folderEntryUp
+	folderEntrySub
+)
 
 // ---- mensajes ----
 
@@ -91,11 +108,18 @@ type Model struct {
 	cwd      string
 	repoRoot string
 	gitOK    bool
+	branch   string
 
 	// menú de objetivo
 	items  []menuItem
 	cursor int
 	status string
+
+	// selector de carpeta (targetOpenFolder)
+	fpDir     string
+	fpEntries []folderEntry
+	fpCursor  int
+	fpErr     error
 
 	// conexión MCP (compartida por todos los objetivos)
 	mcpClient     *mcp.Client
@@ -137,6 +161,8 @@ type Model struct {
 
 	// navegación de resultados del escaneo
 	resultCursor int
+	exportMsg    string
+	exportErr    error
 
 	// revisión de arreglos
 	fixQueue    []findings.Finding
@@ -152,23 +178,32 @@ type Model struct {
 // New crea el modelo inicial, detectando la raíz del repositorio git desde cwd.
 func New() Model {
 	m := Model{w: 100, h: 30}
-	m.cwd, _ = os.Getwd()
-	if m.cwd == "" {
-		m.cwd = "."
+	cwd, _ := os.Getwd()
+	if cwd == "" {
+		cwd = "."
 	}
-	if root, err := gitx.Root(m.cwd); err == nil && root != "" {
-		m.repoRoot = root
-		m.gitOK = true
-	} else {
-		m.repoRoot = m.cwd
-		m.gitOK = false
-	}
+	m.setWorkingDir(cwd)
 	m.buildMenu()
 	return m
 }
 
 // Init implementa tea.Model.
 func (m Model) Init() tea.Cmd { return nil }
+
+// setWorkingDir fija dir como carpeta de trabajo y vuelve a detectar repo,
+// raíz y rama a partir de ahí. La usan tanto New() como el selector de carpeta.
+func (m *Model) setWorkingDir(dir string) {
+	m.cwd = dir
+	if root, err := gitx.Root(dir); err == nil && root != "" {
+		m.repoRoot = root
+		m.gitOK = true
+		m.branch = gitx.Branch(root)
+	} else {
+		m.repoRoot = dir
+		m.gitOK = false
+		m.branch = ""
+	}
+}
 
 func (m *Model) buildMenu() {
 	m.items = nil
@@ -186,6 +221,7 @@ func (m *Model) buildMenu() {
 		menuItem{kind: targetFullRepo, icon: "📁", title: "Full Repository", sub: "scan every manifest in the working tree"},
 		menuItem{kind: targetSecrets, icon: "🔑", title: "Secrets Scan", sub: "scan the full repo for exposed credentials (needs a git remote; can take a minute or two)"},
 		menuItem{kind: targetMCPBrowse, icon: "🛠 ", title: "Browse MCP Tools", sub: "advanced: call any Endor Labs MCP tool manually"},
+		menuItem{kind: targetOpenFolder, icon: "📂", title: "Open Folder", sub: "choose a different folder or repository to scan"},
 	)
 	m.cursor = 0
 }
