@@ -283,4 +283,3 @@ func TestBuildFindsNestedManifestsAndSkipsNodeModules(t *testing.T) {
 		t.Errorf("no preservó permisos 0600: %v", st.Mode().Perm())
 	}
 }
-

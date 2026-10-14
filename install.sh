@@ -60,7 +60,10 @@ fi
 
 if have go; then
   go_raw="$(go version 2>/dev/null)"  # "go version go1.27.0 darwin/arm64"
-  go_num="$(printf '%s' "$go_raw" | sed -n 's/.*go\([0-9]*\.[0-9]*\(\.[0-9]*\)\?\).*/\1/p')"
+  # \{0,1\} instead of the GNU-only \? — BSD sed (macOS's /usr/bin/sed) treats
+  # \? as a literal, so this silently matched nothing on every Mac and made
+  # the check reject every Go install, including valid ones.
+  go_num="$(printf '%s' "$go_raw" | sed -n 's/.*go\([0-9]*\.[0-9]*\(\.[0-9]*\)\{0,1\}\).*/\1/p')"
   if [ -n "$go_num" ] && ver_ge "$go_num" "${MIN_GO_MAJOR}.${MIN_GO_MINOR}"; then
     check 0 Go "$go_raw"
   else
