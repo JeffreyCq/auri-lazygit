@@ -1,9 +1,9 @@
 #Requires -Version 5.1
 <#
-  AURI x Lazygit installer (Windows / PowerShell).
+  AURI installer (Windows / PowerShell).
 
   Usage (from PowerShell):
-    irm https://raw.githubusercontent.com/JeffreyCq/auri-lazygit/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/JeffreyCq/auri-tui/main/install.ps1 | iex
 
   This builds auri-tui.exe from source with your local Go toolchain instead
   of downloading a prebuilt binary, so it always matches your machine and
@@ -17,7 +17,7 @@
 $ErrorActionPreference = 'Continue'
 $PSNativeCommandUseErrorActionPreference = $false  # same guard on PS 7.3+; no-op elsewhere
 
-$RepoUrl = 'https://github.com/JeffreyCq/auri-lazygit.git'
+$RepoUrl = 'https://github.com/JeffreyCq/auri-tui.git'
 $SrcDir  = Join-Path $env:LOCALAPPDATA 'auri-tui\src'   # private cache clone, owned by this script
 $BinDir  = Join-Path $env:LOCALAPPDATA 'auri-tui\bin'
 $BinName = 'auri-tui.exe'
@@ -28,8 +28,8 @@ function Err($msg)  { Write-Host "  xx  $msg" -ForegroundColor Red }
 function Have($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 
 Write-Host ""
-Write-Host "  AURI x Lazygit installer"
-Write-Host "  ------------------------"
+Write-Host "  AURI installer"
+Write-Host "  --------------"
 Write-Host ""
 
 # ---- requirements check --------------------------------------------------
@@ -95,14 +95,6 @@ if (Have 'node') {
     $nodeWarning = "Node.js wasn't found. auri-tui needs it (for npx) to launch the Endor Labs MCP server.`n        Install it with:  winget install OpenJS.NodeJS.LTS`n        or see https://nodejs.org/"
 }
 
-# lazygit (fully optional  -  only used to wire up the Ctrl+A keybinding)
-if (Have 'lazygit') {
-    $lgVer = (lazygit --version) 2>$null
-    Show-Check $true 'lazygit' "$lgVer (optional)"
-} else {
-    Show-Check $false 'lazygit' 'not found on PATH (optional  -  install to get the Ctrl+A keybinding wired up automatically)'
-}
-
 Write-Host ""
 
 if ($hardFailures.Count -gt 0) {
@@ -156,54 +148,8 @@ if (-not ($userPath -split ';' | Where-Object { $_ -eq $BinDir })) {
     Info "$BinDir is already on your PATH."
 }
 
-# ---- wire up Lazygit -----------------------------------------------------
-
-$AuriMarker = 'AURI: open Endor Labs scan menu'
-$CmdPath = (Join-Path $BinDir $BinName) -replace '\\', '/'
-$EntryLines = @(
-    '  - key: "<c-a>"'
-    '    context: "global"'
-    "    description: ""$AuriMarker"""
-    "    command: ""$CmdPath"""
-    '    output: terminal'
-)
-$EntryBlock = $EntryLines -join "`n"
-
-if (Have 'lazygit') {
-    $cfgDir = (& lazygit --print-config-dir 2>$null | Select-Object -First 1)
-    if ($cfgDir) {
-        $cfgDir = $cfgDir.Trim()
-        New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
-        $cfg = Join-Path $cfgDir 'config.yml'
-        if (-not (Test-Path $cfg)) {
-            ("customCommands:`n" + $EntryBlock + "`n") | Set-Content -Path $cfg -Encoding utf8
-            Info "Created $cfg with the AURI keybinding (Ctrl+A)."
-        } elseif (Select-String -Path $cfg -SimpleMatch $AuriMarker -Quiet) {
-            Info "Lazygit is already wired up ($cfg already has the AURI entry)."
-        } elseif (-not (Select-String -Path $cfg -Pattern '^customCommands:' -Quiet)) {
-            ("`ncustomCommands:`n" + $EntryBlock + "`n") | Add-Content -Path $cfg -Encoding utf8
-            Info "Added the AURI keybinding to $cfg."
-        } else {
-            Warn "$cfg already has a customCommands: section with other entries."
-            Warn "Add this under it by hand (same indentation as the existing list):"
-            Write-Host ""
-            Write-Host $EntryBlock
-            Write-Host ""
-        }
-    } else {
-        Warn "Found lazygit but couldn't read its config dir  -  add the entry from lazygit/config.yml by hand."
-    }
-} else {
-    Warn "lazygit wasn't found. Install it (https://github.com/jesseduffield/lazygit), then add:"
-    Write-Host ""
-    Write-Host "customCommands:"
-    Write-Host $EntryBlock
-    Write-Host ""
-    Warn "to its config.yml (lazygit --print-config-dir shows where)."
-}
-
 Write-Host ""
 Info "Done. Next steps:"
 Write-Host "    1. npx -y endorctl init     # free Endor Labs Developer Edition login"
-Write-Host "    2. Open lazygit in a git repo and press Ctrl+A"
+Write-Host "    2. Run auri-tui from inside any git repository"
 Write-Host ""

@@ -14,7 +14,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"auri-lazygit/internal/ui"
+	"auri-tui/internal/ui"
 )
 
 var version = "0.2.0"

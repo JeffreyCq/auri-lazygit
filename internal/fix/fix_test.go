@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"auri-lazygit/internal/demo"
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/demo"
+	"auri-tui/internal/findings"
 )
 
 func demoRepo(t *testing.T) string {

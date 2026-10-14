@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/findings"
 )
 
 // ErrNoAutoFix indica que el hallazgo no se puede remediar automáticamente; el

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"auri-lazygit/internal/demo"
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/demo"
+	"auri-tui/internal/findings"
 )
 
 func TestParseDemoFindings(t *testing.T) {

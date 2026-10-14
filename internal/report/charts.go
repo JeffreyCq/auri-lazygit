@@ -11,7 +11,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/findings"
 )
 
 // Paleta por severidad. Critical/High/Medium se mantienen en rojo/naranja/

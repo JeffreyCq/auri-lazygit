@@ -1,4 +1,4 @@
-module auri-lazygit
+module auri-tui
 
 go 1.24.0
 

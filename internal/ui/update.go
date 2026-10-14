@@ -11,11 +11,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"auri-lazygit/internal/findings"
-	"auri-lazygit/internal/fix"
-	"auri-lazygit/internal/gitx"
-	"auri-lazygit/internal/mcpscan"
-	"auri-lazygit/internal/report"
+	"auri-tui/internal/findings"
+	"auri-tui/internal/fix"
+	"auri-tui/internal/gitx"
+	"auri-tui/internal/mcpscan"
+	"auri-tui/internal/report"
 )
 
 // Update implementa tea.Model.

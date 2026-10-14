@@ -24,9 +24,9 @@ import (
 	"strings"
 	"sync"
 
-	"auri-lazygit/internal/deps"
-	"auri-lazygit/internal/findings"
-	"auri-lazygit/internal/mcp"
+	"auri-tui/internal/deps"
+	"auri-tui/internal/findings"
+	"auri-tui/internal/mcp"
 )
 
 // Progress informa el avance de una llamada a Run. Phase es "deps" mientras

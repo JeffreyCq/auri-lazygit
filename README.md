@@ -1,9 +1,8 @@
-# AURI × Lazygit
+# AURI
 
-A Go TUI launched from [Lazygit](https://github.com/jesseduffield/lazygit) that scans your
-repository for vulnerable dependencies and exposed secrets using the **Endor Labs AURI MCP
-server**, shows the findings as terminal charts, and lets you review and apply fixes with a
-diff and confirmation.
+A Go TUI that scans a repository for vulnerable dependencies and exposed secrets using the
+**Endor Labs AURI MCP server**, shows the findings as terminal charts, and lets you review
+and apply fixes with a diff and confirmation.
 
 It talks to AURI exclusively over MCP (`endorctl ai-tools mcp-server`), which works on the
 free Endor Labs Developer Edition tier — no `endorctl scan`/Enterprise CLI license required.
@@ -14,25 +13,28 @@ free Endor Labs Developer Edition tier — no `endorctl scan`/Enterprise CLI lic
 [Development](#development)
 
 ```
- auri-tui  AURI × Lazygit — Endor Labs MCP
+ auri-tui  AURI — Endor Labs MCP
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⎇ main   📂 ~/code/my-project
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    █   █   █ ████  █████
-   █ █  █   █ █   █   █
-  █████ █   █ ████    █
-  █   █ █   █ █  █    █
-  █   █  ███  █   █ █████
-  Endor Labs security scanner, right inside Lazygit
+                                      █   █   █ ████  █████
+                                     █ █  █   █ █   █   █
+                                    █████ █   █ ████    █
+                                    █   █ █   █ █  █    █
+                                    █   █  ███  █   █ █████
+                                         by Endor Labs
 
   What do you want to scan?
 
-╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  📝 ▸ Local Changes       not a git repository                                                    │
-│  📌   Pick a Commit       scan the dependency manifests as of a specific commit                   │
-│  📁   Full Repository     scan every manifest in the working tree                                 │
+╭────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│  📝 ▸ Local Changes       scan only files with uncommitted changes                                 │
+│  📌   Pick a Commit       scan the dependency manifests as of a specific commit                    │
+│  📁   Full Repository     scan every manifest in the working tree                                  │
 │  🔑   Secrets Scan        scan the full repo for exposed credentials (needs a git remote; …)       │
 │  🛠    Browse MCP Tools    advanced: call any Endor Labs MCP tool manually                          │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+│  📂   Open Folder         choose a different folder or repository to scan                          │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
   This is a manual pre-push check: scans run only when you ask, never automatically.
 ```
@@ -42,47 +44,40 @@ free Endor Labs Developer Edition tier — no `endorctl scan`/Enterprise CLI lic
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JeffreyCq/auri-lazygit/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JeffreyCq/auri-tui/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/JeffreyCq/auri-lazygit/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/JeffreyCq/auri-tui/main/install.ps1 | iex
 ```
 
 Both scripts build `auri-tui` from source with your local Go toolchain (no prebuilt binaries
-to trust, no macOS Gatekeeper prompt), install it to a per-user directory
-(`~/.local/bin` on macOS/Linux, `%LOCALAPPDATA%\auri-tui\bin` on Windows), and — if they find
-`lazygit` on your `PATH` — wire up the `Ctrl+A` keybinding in your Lazygit config automatically.
-If you already have a `customCommands:` section in your Lazygit config with other entries, the
-installer leaves it alone and prints the one entry to add by hand instead of risking a broken
-YAML merge.
+to trust, no macOS Gatekeeper prompt) and install it to a per-user directory (`~/.local/bin`
+on macOS/Linux, `%LOCALAPPDATA%\auri-tui\bin` on Windows). Each checks every requirement up
+front — printing a pass/fail checklist for Go, git and Node.js before doing any cloning or
+building — rather than failing partway through on the first one it hits.
 
 **Requirements:** [Go](https://go.dev/dl/) 1.24+, [git](https://git-scm.com/), and
 [Node.js](https://nodejs.org/) 18+ (for `npx`, which launches the Endor Labs MCP server).
-The installer checks every requirement up front — printing a pass/fail checklist for all of
-them before doing any cloning or building — rather than failing partway through on the first
-one it hits.
 
 ### From source (manual)
 
 ```bash
-git clone https://github.com/JeffreyCq/auri-lazygit.git
-cd auri-lazygit
+git clone https://github.com/JeffreyCq/auri-tui.git
+cd auri-tui
 make install     # builds and copies the binary to ~/.local/bin/auri-tui
 # make sure ~/.local/bin is on your PATH
 ```
 
-Then copy the `customCommands` entry from [`lazygit/config.yml`](lazygit/config.yml) into your
-own Lazygit config (`lazygit --print-config-dir` shows where).
-
 ## How it works
 
-Run `auri-tui` (no flags) from anywhere inside a git repository, or launch it from Lazygit
-with a single keybinding. It then:
+Run `auri-tui` (no flags) from anywhere — it detects whether you're inside a git repository,
+and if not, the **Open Folder** menu item lets you browse to one without relaunching. From
+there it:
 
-1. Detects the current repository root from the working directory.
+1. Detects the current repository root (and branch) from the working directory.
 2. Shows a menu to pick **what to scan**: local changes only, a specific commit (typed ref,
    hash, or branch), the full repository, a repo-wide secrets scan, or a manual MCP tool
    browser for advanced use.
@@ -94,7 +89,8 @@ with a single keybinding. It then:
    runs Endor's secrets detector over the whole working tree server-side (this one needs a
    git `origin` remote configured; the dependency targets don't).
 4. Renders the results as block-character charts: severity bars, a category breakdown, and a
-   0–100 risk meter (a local heuristic — not an Endor Labs score).
+   0–100 risk meter (a local heuristic — not an Endor Labs score). Press `e` on the results
+   screen to export the same data as a Markdown report next to the repo root.
 5. Lets you step through findings one at a time and, where a direct-dependency upgrade is
    available, shows a diff and asks whether to apply it or skip — nothing is written to disk
    without confirmation. Secrets findings are never auto-fixable (rotating a credential isn't
@@ -115,9 +111,10 @@ separate server process is needed — just a valid `endorctl` session.
 
 | Screen | Keys |
 |---|---|
-| Scan menu | ↑↓ move · enter select (Local Changes, Pick a Commit, Full Repository, Secrets Scan, Browse MCP Tools) · q/esc quit |
+| Scan menu | ↑↓ move · enter select (Local Changes, Pick a Commit, Full Repository, Secrets Scan, Browse MCP Tools, Open Folder) · q/esc quit |
 | Commit picker | ↑↓ move · enter select · t type a ref (hash/branch/tag) · esc back |
-| Scan results | ↑↓ move · f review & apply fixes · esc back to menu |
+| Folder picker | ↑↓ move · enter open/select · esc cancel |
+| Scan results | ↑↓ move · f review & apply fixes · e export report · esc back to menu |
 | Fix review | a apply · s/n skip · esc stop reviewing |
 | MCP tool browser | advanced: call any Endor Labs MCP tool manually with custom parameters |
 
@@ -133,7 +130,7 @@ separate server process is needed — just a valid `endorctl` session.
 - Does not attempt to auto-fix exposed secrets, SAST findings, malware, or transitive
   dependencies with no direct upgrade path — it explains why and what to do instead.
 - Nothing is ever applied without you pressing `a` on that specific finding — there's no
-  bulk-apply, no `--yes` flag, and no way to trigger it from the Lazygit config.
+  bulk-apply and no `--yes` flag anywhere in the app.
 
 ## Security
 
@@ -171,11 +168,10 @@ Found something that doesn't hold up? Please open an issue.
   scanner server-side, so it can take a minute or two, especially on the first run.
 - The secrets scan requires the repository to have a git `origin` remote configured
   (`git remote add origin <url>`) — the dependency scans don't need one.
-- Windows support: fully exercised and working, including the Lazygit `Ctrl+A` keybinding and
-  the installer. The one environment-specific gap is that file permission *bits* (e.g. `0600`
-  on a sensitive file) aren't meaningful on Windows/NTFS the way they are on macOS/Linux, so
-  that part of the fix-apply behavior is best-effort there. If something's off, please open an
-  issue.
+- Windows support: fully exercised and working, including the installer. The one
+  environment-specific gap is that file permission *bits* (e.g. `0600` on a sensitive file)
+  aren't meaningful on Windows/NTFS the way they are on macOS/Linux, so that part of the
+  fix-apply behavior is best-effort there. If something's off, please open an issue.
 
 ## Structure
 
@@ -189,18 +185,17 @@ internal/deps       discovers and parses dependency manifests
 internal/findings   normalized Finding model
 internal/gitx       git helpers: repo root, changed files, recent commits, temp worktrees
 internal/fix        manifest editors, diff, atomic apply
-internal/report     block-character charts: bars, risk meter, summaries
-internal/ui         Bubble Tea: scan menu, commit picker, scanning, results, fix review
-install.sh          macOS/Linux installer: builds from source, wires up Lazygit
+internal/report     block-character charts and the Markdown report exporter
+internal/ui         Bubble Tea: scan menu, folder/commit picker, scanning, results, fix review
+install.sh          macOS/Linux installer: builds from source
 install.ps1         Windows installer: same, in PowerShell
-lazygit/config.yml  customCommands entry to copy into your Lazygit config by hand
 ```
 
 ## Development
 
 ```bash
-git clone https://github.com/JeffreyCq/auri-lazygit.git
-cd auri-lazygit
+git clone https://github.com/JeffreyCq/auri-tui.git
+cd auri-tui
 go build ./...      # or: make build
 go vet ./...
 go test ./...        # or: make test

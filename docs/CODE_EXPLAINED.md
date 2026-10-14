@@ -1,4 +1,4 @@
-# AURI x Lazygit — code walkthrough
+# AURI — code walkthrough
 
 A plain-language map of what this codebase does, how its pieces call each
 other, and the exact shapes of the data flowing between them. Written so you
@@ -6,26 +6,26 @@ can walk through it out loud without re-reading the source.
 
 ## 1. The one-sentence pitch
 
-A Go terminal app (`auri-tui`), launched from Lazygit with `Ctrl+A`, that
-scans a git repo's dependencies and secrets by talking to the **Endor Labs
-MCP server** (`endorctl ai-tools mcp-server`) over JSON-RPC on stdio, renders
-the findings as terminal charts, and — for dependency findings with a known
-fixed version — can patch the manifest file for you after showing a diff.
+A Go terminal app (`auri-tui`) that scans a git repo's dependencies and
+secrets by talking to the **Endor Labs MCP server**
+(`endorctl ai-tools mcp-server`) over JSON-RPC on stdio, renders the findings
+as terminal charts, and — for dependency findings with a known fixed
+version — can patch the manifest file for you after showing a diff.
 
 ## 2. Process boundaries (who talks to whom)
 
 ```
-Lazygit  --Ctrl+A, output:terminal-->  auri-tui.exe
-                                             |
-                                             | spawns as a child process, talks
-                                             | JSON-RPC 2.0 over stdin/stdout
-                                             v
-                                  endorctl ai-tools mcp-server
-                                   (spawned via: npx -y endorctl ai-tools mcp-server)
-                                             |
-                                             | HTTPS, its own auth
-                                             v
-                                     api.endorlabs.com
+you  --runs-->  auri-tui
+                    |
+                    | spawns as a child process, talks
+                    | JSON-RPC 2.0 over stdin/stdout
+                    v
+         endorctl ai-tools mcp-server
+          (spawned via: npx -y endorctl ai-tools mcp-server)
+                    |
+                    | HTTPS, its own auth
+                    v
+            api.endorlabs.com
 ```
 
 `auri-tui` never calls Endor Labs' HTTP API directly. It only ever speaks
@@ -65,10 +65,8 @@ internal/deps          discovers & parses dependency manifests (no network)
 internal/findings       the normalized Finding struct + severity/sort logic
 internal/gitx           shells out to `git` (root, worktree, commits, diff)
 internal/fix             edits a manifest's version line, builds a diff, applies atomically
-internal/report           block-character bar charts / risk meter
-internal/demo              canned findings.json used by tests (and an unused demo path)
-internal/endor              UNUSED — a dead CLI-wrapper code path, see §9
-internal/history            local on-disk history of past scans (JSON file)
+internal/report           block-character bar charts, risk meter, and the Markdown report exporter
+internal/demo              canned findings.json + fixture repo files used by tests
 ```
 
 ## 5. The MCP client — `internal/mcp`
@@ -117,7 +115,7 @@ relative to when they were sent. The ID map is what makes that safe.
 
 **Three methods built on `sendRequest`:**
 - `Initialize(ctx)` — sends `method: "initialize"` with a fixed ID of `1`,
-  `protocolVersion: "2024-11-05"`, and `clientInfo: {name: "auri-lazygit",
+  `protocolVersion: "2024-11-05"`, and `clientInfo: {name: "auri-tui",
   version: "0.1.0"}`. Must succeed before anything else.
 - `ListTools(ctx)` — `method: "tools/list"`, no params; returns the
   server's tool catalog (name + JSON Schema per tool).
@@ -248,9 +246,10 @@ worth calling out as a deliberate design choice in the parsing code.
 ## 8. The UI layer — `internal/ui` (Bubble Tea)
 
 **State machine**: a `screen` enum drives which view renders —
-`scMenu → scCommitPick (optional) → scScanning → scScanResults →
-scFixReview`, plus a parallel `scMCPTools / scToolInput / scEditParam /
-scRawToolResult` path for the manual "Browse MCP Tools" fallback.
+`scMenu → scFolderPick / scCommitPick (optional) → scScanning →
+scScanResults → scFixReview`, plus a parallel `scMCPTools / scToolInput /
+scEditParam / scRawToolResult` path for the manual "Browse MCP Tools"
+fallback.
 
 **Connecting** (`connectMCP` in [model.go](../internal/ui/model.go)):
 spawns the client (`mcp.NewClient("npx", "-y", "endorctl", "ai-tools",
@@ -284,6 +283,13 @@ A commit scan never touches your real working tree — `gitx.AddWorktree`
 checks the commit out into a disposable temp directory via `git worktree
 add --detach --force`, and `cleanup()` runs `git worktree remove --force`
 + `prune` afterward.
+
+**Open Folder** (`scFolderPick`): a small, separately-tested state machine
+that lists subdirectories of the current folder, lets you drill down, go up
+a level, or confirm "use this folder" — which re-detects the repo root and
+branch from wherever you land (`Model.setWorkingDir`). This is what makes
+`auri-tui` usable as a standalone app pointed at any folder, not just one
+launched from inside an already-known repo.
 
 ## 9. Fix review and apply — `internal/fix`
 
@@ -341,19 +347,7 @@ is a nice concrete example of **shared-deadline-context-reuse** as a bug
 class: it's not that the timeout value was wrong in isolation, it's that
 two sequential operations were forced to split one budget.
 
-## 11. Dead code worth knowing about
-
-`internal/endor` (`run.go`, `endor.go`) implements an entirely separate
-code path: shelling out to `endorctl scan ...` directly as a CLI subprocess
-and parsing its JSON/SARIF output, with its own error classification
-(`ScanError`, `ErrKind` for auth/network/license/timeout). **Nothing in
-`cmd/` or `internal/ui` imports it** — the real app went all-in on the MCP
-path (`internal/mcpscan`) instead. It's only reachable from its own test
-file. Likely a leftover from an earlier design before the project
-committed to MCP-only. Good to know it's there so you don't accidentally
-describe it as part of the live code path in an interview.
-
-## 12. Supporting pieces, briefly
+## 11. Supporting pieces, briefly
 
 - **`internal/findings`** — the `Finding` struct (severity, category,
   package/version, file/line, CVSS/EPSS, aliases) that both scan engines
@@ -362,22 +356,19 @@ describe it as part of the live code path in an interview.
   score: `critical*10 + high*5 + medium*2 + low`, capped at 100.
 - **`internal/gitx`** — thin wrapper over shelling out to `git` (never a
   shell string, always an argv slice, so there's no shell-injection
-  surface). `CreateBranchAndCommit` only ever `git add`s the files you pass
-  it explicitly — never `git add -A` — so an in-progress fix commit can't
-  accidentally sweep up unrelated changes.
+  surface). References that come from outside explicit user input (a
+  resolved commit hash, a worktree ref) are rejected if they start with
+  `-`, so they can never be reinterpreted as a flag.
 - **`internal/report`** — pure-text bar charts (severity bars, a stacked
   category bar, a 0-100 risk meter, sparklines) built on Lip Gloss for
-  ANSI styling; no external charting dependency.
-- **`internal/history`** — appends each scan's summary to a local JSON file
-  so results can be compared over time (used for the sparkline trend).
+  ANSI styling, plus `Markdown()` — a self-contained Markdown report
+  (summary table, risk score, findings grouped by severity) that the
+  results screen can write to disk with `e`. No external charting or
+  Markdown-generation dependency.
 
-## 13. The installer scripts
+## 12. The installer scripts
 
-`install.ps1` / `install.sh` both: check requirements up front (git, Go
-≥1.24, Node ≥18 for npx, lazygit optionally) and print a full pass/fail
-checklist before doing any work, clone the repo into a private cache dir,
-`go build` the binary into a per-user bin dir, add that dir to PATH if
-missing, then write (or merge into) Lazygit's `config.yml` a
-`customCommands` entry binding `Ctrl+A` to the installed binary with
-`output: terminal` (so Lazygit suspends and hands the whole screen to
-`auri-tui` while it runs, same as any other Lazygit custom command).
+`install.ps1` / `install.sh` both: check requirements up front (git,
+Go ≥1.24, Node ≥18 for npx) and print a full pass/fail checklist before
+doing any work, clone the repo into a private cache dir, `go build` the
+binary into a per-user bin dir, and add that dir to `PATH` if it's missing.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"auri-lazygit/internal/gitx"
+	"auri-tui/internal/gitx"
 )
 
 func sh(t *testing.T, dir string, args ...string) string {

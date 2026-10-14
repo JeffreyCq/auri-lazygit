@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"auri-lazygit/internal/findings"
-	"auri-lazygit/internal/mcp"
+	"auri-tui/internal/findings"
+	"auri-tui/internal/mcp"
 )
 
 // ErrNoGitRemote se devuelve cuando la herramienta MCP `scan` rechaza el

@@ -7,8 +7,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"auri-lazygit/internal/demo"
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/demo"
+	"auri-tui/internal/findings"
 )
 
 var ansi = regexp.MustCompile(`\x1b\[[0-9;]*m`)

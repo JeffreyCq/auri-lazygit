@@ -1,4 +1,4 @@
-// Package ui implementa la interfaz de terminal (Bubble Tea) de AURI × Lazygit.
+// Package ui implementa la interfaz de terminal (Bubble Tea) de AURI.
 package ui
 
 import (
@@ -8,11 +8,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"auri-lazygit/internal/findings"
-	"auri-lazygit/internal/fix"
-	"auri-lazygit/internal/gitx"
-	"auri-lazygit/internal/mcp"
-	"auri-lazygit/internal/mcpscan"
+	"auri-tui/internal/findings"
+	"auri-tui/internal/fix"
+	"auri-tui/internal/gitx"
+	"auri-tui/internal/mcp"
+	"auri-tui/internal/mcpscan"
 )
 
 type screen int

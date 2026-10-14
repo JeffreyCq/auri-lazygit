@@ -6,8 +6,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"auri-lazygit/internal/fix"
-	"auri-lazygit/internal/report"
+	"auri-tui/internal/fix"
+	"auri-tui/internal/report"
 )
 
 // Estilos de la UI. sBrand, sAccent y sOK referencian la paleta de marca de

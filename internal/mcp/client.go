@@ -94,7 +94,7 @@ func (c *Client) Initialize(ctx context.Context) error {
 		Params: InitializeRequest{
 			ProtocolVersion: "2024-11-05",
 			ClientInfo: ClientInfo{
-				Name:    "auri-lazygit",
+				Name:    "auri-tui",
 				Version: "0.1.0",
 			},
 		},

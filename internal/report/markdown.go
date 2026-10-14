@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"auri-lazygit/internal/findings"
+	"auri-tui/internal/findings"
 )
 
 // MarkdownMeta son los datos de contexto de un escaneo para el reporte exportable.

@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 
-	"auri-lazygit/internal/report"
+	"auri-tui/internal/report"
 )
 
 // trunc recorta s (puede tener ANSI) a w columnas.

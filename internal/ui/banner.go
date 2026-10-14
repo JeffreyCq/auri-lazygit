@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"auri-lazygit/internal/report"
+	"auri-tui/internal/report"
 )
 
 // auriFont es una pequeña fuente de bloques 5×5 embebida, justo lo
